@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { supabase } from '../supabase/client'
 import ProductCard from '../components/ProductCard'
 import '../styles/Shop.css'
 
@@ -16,24 +15,21 @@ function Shop() {
   const maxPrice = searchParams.get('max') || ''
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      setLoading(true)
-      let query = supabase
-        .from('products')
-        .select('*')
-        .eq('is_active', true)
-        .order('created_at', { ascending: false })
+  const fetchProducts = async () => {
+    setLoading(true)
+    const res = await fetch('http://localhost:5000/api/products')
+    const data = await res.json()
 
-      if (category !== 'Barchasi') query = query.eq('category', category)
-      if (minPrice) query = query.gte('price', minPrice)
-      if (maxPrice) query = query.lte('price', maxPrice)
+    let filtered = data.filter(p => p.is_active)
+    if (category !== 'Barchasi') filtered = filtered.filter(p => p.category === category)
+    if (minPrice) filtered = filtered.filter(p => p.price >= Number(minPrice))
+    if (maxPrice) filtered = filtered.filter(p => p.price <= Number(maxPrice))
 
-      const { data } = await query
-      setProducts(data || [])
-      setLoading(false)
-    }
-    fetchProducts()
-  }, [category, minPrice, maxPrice])
+    setProducts(filtered)
+    setLoading(false)
+  }
+  fetchProducts()
+}, [category, minPrice, maxPrice])
 
   const setCategory = (cat) => {
     const params = {}

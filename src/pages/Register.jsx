@@ -1,10 +1,9 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { supabase } from '../supabase/client'
 
 function Register() {
   const navigate = useNavigate()
-  const [form, setForm] = useState({ full_name: '', phone: '', email: '', password: '' })
+  const [form, setForm] = useState({ full_name: '', email: '', password: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
@@ -18,24 +17,21 @@ function Register() {
     setError('')
     setLoading(true)
 
-    const { error } = await supabase.auth.signUp({
-      email: form.email,
-      password: form.password,
-      options: {
-        data: {
-          full_name: form.full_name,
-          phone: form.phone,
-        }
-      }
+    const res = await fetch('http://localhost:5000/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(form)
     })
 
-    if (error) {
-      setError(error.message)
+    const data = await res.json()
+
+    if (!res.ok) {
+      setError(data.message)
       setLoading(false)
       return
     }
 
-    navigate('/profile')
+    navigate('/login')
   }
 
   return (
@@ -48,52 +44,18 @@ function Register() {
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Ism familiya</label>
-            <input
-              type="text"
-              name="full_name"
-              value={form.full_name}
-              onChange={handleChange}
-              placeholder="Ism Familiya"
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Telefon</label>
-            <input
-              type="tel"
-              name="phone"
-              value={form.phone}
-              onChange={handleChange}
-              placeholder="+998901234567"
-              required
-            />
+            <input type="text" name="full_name" value={form.full_name} onChange={handleChange} placeholder="Ism Familiya" required />
           </div>
 
           <div className="form-group">
             <label>Email</label>
-            <input
-              type="email"
-              name="email"
-              value={form.email}
-              onChange={handleChange}
-              placeholder="email@example.com"
-              required
-            />
+            <input type="email" name="email" value={form.email} onChange={handleChange} placeholder="email@example.com" required />
           </div>
 
           <div className="form-group">
             <label>Parol</label>
             <div className="input-password">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                name="password"
-                value={form.password}
-                onChange={handleChange}
-                placeholder="••••••••"
-                minLength={6}
-                required
-              />
+              <input type={showPassword ? 'text' : 'password'} name="password" value={form.password} onChange={handleChange} placeholder="••••••••" minLength={6} required />
               <button type="button" onClick={() => setShowPassword(!showPassword)}>
                 {showPassword ? '🙈' : '👁️'}
               </button>

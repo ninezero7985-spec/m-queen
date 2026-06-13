@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import emailjs from '@emailjs/browser'
 import { useNavigate } from 'react-router-dom'
-import { supabase } from '../supabase/client'
 import { useCart } from '../context/CartContext'
 import '../styles/Checkout.css'
 
@@ -32,27 +31,31 @@ function Checkout() {
 
     const delivery_fee = form.delivery_type === 'delivery' ? 15000 : 0
 
-    const { error } = await supabase.from('orders').insert({
-      user_id: null,
-      full_name: form.full_name,
-      phone: form.phone,
-      delivery_type: form.delivery_type,
-      city: form.delivery_type === 'delivery' ? form.city : null,
-      street: form.delivery_type === 'delivery' ? form.street : null,
-      house: form.delivery_type === 'delivery' ? form.house : null,
-      payment_method: form.payment_method,
-      items: cart,
-      subtotal: total,
-      delivery_fee,
-      total: total + delivery_fee,
-      note: form.note,
-    })
+    const res = await fetch('http://localhost:5000/api/orders', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    full_name: form.full_name,
+    phone: form.phone,
+    delivery_type: form.delivery_type,
+    city: form.delivery_type === 'delivery' ? form.city : null,
+    street: form.delivery_type === 'delivery' ? form.street : null,
+    house: form.delivery_type === 'delivery' ? form.house : null,
+    payment_method: form.payment_method,
+    items: cart,
+    subtotal: total,
+    delivery_fee,
+    total: total + delivery_fee,
+    note: form.note,
+    status: 'new',
+  })
+})
 
-    if (error) {
-      setError('Xatolik yuz berdi, qayta urinib ko\'ring')
-      setLoading(false)
-      return
-    }
+if (!res.ok) {
+  setError('Xatolik yuz berdi, qayta urinib ko\'ring')
+  setLoading(false)
+  return
+}
 
     const itemsList = cart
       .map(item => `${item.name} x${item.quantity} — ${(item.price * item.quantity).toLocaleString()} so'm`)

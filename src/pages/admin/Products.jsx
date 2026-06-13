@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react'
-import { supabase } from '../../supabase/client'
 import '../../styles/Admin.css'
 
 const CATEGORIES = ["Ko'ylaklar", 'Yubkalar', 'Shimlar', 'Kurtalar', 'Sport', 'Aksessuarlar']
@@ -94,10 +93,11 @@ function Products() {
   useEffect(() => { fetchProducts() }, [])
 
   const fetchProducts = async () => {
-    const { data } = await supabase.from('products').select('*').order('created_at', { ascending: false })
-    setProducts(data || [])
-    setLoading(false)
-  }
+  const res = await fetch('http://localhost:5000/api/products')
+  const data = await res.json()
+  setProducts(data)
+  setLoading(false)
+}
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
@@ -149,70 +149,64 @@ function Products() {
 
   // Saqlash bosilganda — siqish + yuklash
   const uploadPendingFiles = async () => {
-    const urls = []
-    for (const file of pendingFiles) {
-      const compressed = await compressImage(file) // siqish shu yerda
-      const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.webp`
-      const { error } = await supabase.storage.from('products').upload(fileName, compressed, {
-        contentType: 'image/webp',
-        cacheControl: '3600',
-      })
-      if (!error) {
-        const { data } = supabase.storage.from('products').getPublicUrl(fileName)
-        urls.push(data.publicUrl)
-      }
-    }
-    return urls
+  const urls = []
+  for (const file of pendingFiles) {
+    const compressed = await compressImage(file)
+    const base64 = await new Promise((resolve) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result)
+      reader.readAsDataURL(compressed)
+    })
+    urls.push(base64)
   }
+  return urls
+}
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
+  e.preventDefault()
 
-    if (totalImages === 0) {
-      showNotif('❌ Kamida 1 ta rasm qo\'shing', 'error')
-      return
-    }
-
-    setUploading(true)
-
-    // Eski o'chirilgan rasmlarni Storage dan o'chirish
-    if (editId) {
-      const original = products.find(p => p.id === editId)
-      const removed = (original?.images || []).filter(url => !savedImages.includes(url))
-      for (const url of removed) {
-        const fileName = getFileNameFromUrl(url)
-        if (fileName) await supabase.storage.from('products').remove([fileName])
-      }
-    }
-
-    // Rasmlar siqilmoqda
-    if (pendingFiles.length > 0) {
-      showNotif('⏳ Rasmlar siqilmoqda...')
-    }
-
-    const newUrls = await uploadPendingFiles()
-    const allImages = [...savedImages, ...newUrls]
-
-    const payload = {
-      ...form,
-      price: Number(form.price),
-      old_price: form.old_price ? Number(form.old_price) : null,
-      stock: Number(form.stock),
-      images: allImages,
-    }
-
-    if (editId) {
-      await supabase.from('products').update(payload).eq('id', editId)
-      showNotif('✅ Mahsulot yangilandi')
-    } else {
-      await supabase.from('products').insert(payload)
-      showNotif('✅ Mahsulot qo\'shildi')
-    }
-
-    setUploading(false)
-    closeForm()
-    fetchProducts()
+  if (totalImages === 0) {
+    showNotif('❌ Kamida 1 ta rasm qo\'shing', 'error')
+    return
   }
+
+  setUploading(true)
+
+  if (pendingFiles.length > 0) {
+    showNotif('⏳ Rasmlar siqilmoqda...')
+  }
+
+  const newUrls = await uploadPendingFiles()
+  const allImages = [...savedImages, ...newUrls]
+
+  const payload = {
+    ...form,
+    price: Number(form.price),
+    old_price: form.old_price ? Number(form.old_price) : null,
+    stock: Number(form.stock),
+    images: allImages,
+  }
+
+  if (editId) {
+    await fetch(`http://localhost:5000/api/products/${editId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+    showNotif('✅ Mahsulot yangilandi')
+  } else {
+    await fetch('http://localhost:5000/api/products', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+    showNotif('✅ Mahsulot qo\'shildi')
+  }
+
+  setUploading(false)
+  fetchProducts()
+  closeForm()
+}
 
   const closeForm = () => {
     pendingPreviews.forEach(url => URL.revokeObjectURL(url))
@@ -244,22 +238,23 @@ function Products() {
   }
 
   const handleDelete = async (id) => {
-    if (!confirm('Mahsulotni o\'chirasizmi?')) return
-    const product = products.find(p => p.id === id)
-    if (product?.images?.length) {
-      const fileNames = product.images.map(getFileNameFromUrl).filter(Boolean)
-      if (fileNames.length) await supabase.storage.from('products').remove(fileNames)
-    }
-    await supabase.from('products').delete().eq('id', id)
-    showNotif('🗑️ Mahsulot o\'chirildi')
-    fetchProducts()
-  }
+  if (!confirm('Mahsulotni o\'chirasizmi?')) return
+  await fetch(`http://localhost:5000/api/products/${id}`, {
+    method: 'DELETE'
+  })
+  showNotif('🗑️ Mahsulot o\'chirildi')
+  fetchProducts()
+}
 
   const handleToggleActive = async (id, is_active) => {
-    await supabase.from('products').update({ is_active: !is_active }).eq('id', id)
-    showNotif(is_active ? '🙈 Yashirildi' : '👁️ Ko\'rsatildi')
-    fetchProducts()
-  }
+  await fetch(`http://localhost:5000/api/products/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ is_active: !is_active })
+  })
+  showNotif(is_active ? '🙈 Yashirildi' : '👁️ Ko\'rsatildi')
+  fetchProducts()
+}
 
   if (loading) return <p className="loading">Yuklanmoqda...</p>
 

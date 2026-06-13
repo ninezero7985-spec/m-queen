@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { supabase } from '../../supabase/client'
 import '../../styles/Admin.css'
 
 function Dashboard() {
@@ -9,22 +8,29 @@ function Dashboard() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const fetchStats = async () => {
-      const [{ count: orders }, { count: products }, { data: newOrds }, { data: allOrds }] = await Promise.all([
-        supabase.from('orders').select('*', { count: 'exact', head: true }),
-        supabase.from('products').select('*', { count: 'exact', head: true }),
-        supabase.from('orders').select('*').eq('status', 'new').order('created_at', { ascending: false }).limit(5),
-        supabase.from('orders').select('total'),
-      ])
+  const fetchStats = async () => {
+    const [ordersRes, productsRes] = await Promise.all([
+      fetch('http://localhost:5000/api/orders'),
+      fetch('http://localhost:5000/api/products'),
+    ])
 
-      const revenue = allOrds?.reduce((sum, o) => sum + o.total, 0) || 0
+    const orders = await ordersRes.json()
+    const products = await productsRes.json()
 
-      setStats({ orders, products, newOrders: newOrds?.length || 0, revenue })
-      setRecentOrders(newOrds || [])
-      setLoading(false)
-    }
-    fetchStats()
-  }, [])
+    const newOrds = orders.filter(o => o.status === 'new').slice(0, 5)
+    const revenue = orders.reduce((sum, o) => sum + (o.total || 0), 0)
+
+    setStats({
+      orders: orders.length,
+      products: products.length,
+      newOrders: newOrds.length,
+      revenue
+    })
+    setRecentOrders(newOrds)
+    setLoading(false)
+  }
+  fetchStats()
+}, [])
 
   if (loading) return <p className="loading">Yuklanmoqda...</p>
 

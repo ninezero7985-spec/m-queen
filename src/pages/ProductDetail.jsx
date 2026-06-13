@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { supabase } from '../supabase/client'
 import { useCart } from '../context/CartContext'
 import '../styles/ProductDetail.css'
 
@@ -16,20 +15,17 @@ function ProductDetail() {
   const [lightbox, setLightbox] = useState(false)
 
   useEffect(() => {
-    const fetchProduct = async () => {
-      const { data } = await supabase
-        .from('products')
-        .select('*')
-        .eq('id', id)
-        .single()
-
-      setProduct(data)
-      setSelectedSize(data?.sizes?.[0] || '')
-      setSelectedColor(data?.colors?.[0] || '')
-      setLoading(false)
-    }
-    fetchProduct()
-  }, [id])
+  const fetchProduct = async () => {
+    const res = await fetch('http://localhost:5000/api/products')
+    const data = await res.json()
+    const found = data.find(p => String(p.id) === String(id))
+    setProduct(found || null)
+    setSelectedSize(found?.sizes?.[0] || '')
+    setSelectedColor(found?.colors?.[0] || '')
+    setLoading(false)
+  }
+  fetchProduct()
+}, [id])
 
   // ESC bilan yopish
   useEffect(() => {

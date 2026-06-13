@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { supabase } from '../supabase/client'
 import '../styles/Login.css'
 
 function Login() {
@@ -15,80 +14,62 @@ function Login() {
   }
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
+  e.preventDefault()
+  setError('')
+  setLoading(true)
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: form.email,
-      password: form.password,
+  try {
+    const res = await fetch('http://localhost:5000/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(form)
     })
 
-    if (error) {
-      setError('Email yoki parol noto\'g\'ri')
+    const data = await res.json()
+
+    if (!res.ok) {
+      setError(data.message || 'Xatolik yuz berdi')
       setLoading(false)
       return
     }
 
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', data.user.id)
-      .single()
-
-    if (profile?.role === 'admin') {
-      navigate('/admin')
-    } else {
-      setError('Sizda admin huquqi yo\'q')
-      await supabase.auth.signOut()
-      setLoading(false)
-    }
+    localStorage.setItem('token', data.token)
+    localStorage.setItem('user', JSON.stringify(data.user))
+    navigate('/admin')
+  } catch (err) {
+    setError('Server bilan aloqa yo\'q')
+    setLoading(false)
   }
+}
 
   return (
-    <div className="auth-page">
-      <div className="auth-card">
-        <h2>Admin kirish</h2>
+  <div className="auth-page">
+    <div className="auth-card">
+      <h2>Admin kirish</h2>
 
-        {error && <p className="auth-error">{error}</p>}
+      {error && <p className="auth-error">{error}</p>}
 
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label>Email</label>
-            <input
-              type="email"
-              name="email"
-              value={form.email}
-              onChange={handleChange}
-              placeholder="admin@example.com"
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Parol</label>
-            <div className="input-password">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                name="password"
-                value={form.password}
-                onChange={handleChange}
-                placeholder="••••••••"
-                required
-              />
-              <button type="button" onClick={() => setShowPassword(!showPassword)}>
-                {showPassword ? '🙈' : '👁️'}
-              </button>
-            </div>
-          </div>
-
-          <button type="submit" className="btn-primary full" disabled={loading}>
-            {loading ? 'Kirish...' : 'Kirish'}
-          </button>
-        </form>
+      <div className="form-group">
+        <label>Email</label>
+        <input type="email" name="email" value={form.email} onChange={handleChange} placeholder="admin@example.com" required />
       </div>
+
+      <div className="form-group">
+        <label>Parol</label>
+        <div className="input-password">
+          <input type={showPassword ? 'text' : 'password'} name="password" value={form.password} onChange={handleChange} placeholder="••••••••" required />
+          <button type="button" onClick={() => setShowPassword(!showPassword)}>
+            {showPassword ? '🙈' : '👁️'}
+          </button>
+        </div>
+      </div>
+
+      <button onClick={handleSubmit} className="btn-primary full" disabled={loading}>
+        {loading ? 'Kirish...' : 'Kirish'}
+      </button>
     </div>
-  )
+  </div>
+)
 }
 
 export default Login

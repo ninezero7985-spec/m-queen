@@ -13,6 +13,7 @@ import AdminRoute from './components/AdminRoute'
 import AdminDashboard from './pages/admin/Dashboard'
 import AdminProducts from './pages/admin/Products'
 import AdminOrders from './pages/admin/Orders'
+import Register from './pages/Register'
 
 const router = createBrowserRouter([
   {
@@ -20,6 +21,7 @@ const router = createBrowserRouter([
     element: <Layout />,
     errorElement: <ErrorPage />,
     children: [
+      { path: 'register', element: <Register /> },
       { index: true, element: <Home /> },
       { path: 'shop', element: <Shop /> },
       { path: 'shop/:id', element: <ProductDetail /> },

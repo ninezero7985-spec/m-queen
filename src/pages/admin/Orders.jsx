@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { supabase } from '../../supabase/client'
 import '../../styles/Admin.css'
 
 const STATUS_LABELS = {
@@ -22,18 +21,20 @@ function Orders() {
   }, [])
 
   const fetchOrders = async () => {
-    const { data } = await supabase
-      .from('orders')
-      .select('*')
-      .order('created_at', { ascending: false })
-    setOrders(data || [])
-    setLoading(false)
-  }
+  const res = await fetch('http://localhost:5000/api/orders')
+  const data = await res.json()
+  setOrders(data)
+  setLoading(false)
+}
 
   const updateStatus = async (id, status) => {
-    await supabase.from('orders').update({ status }).eq('id', id)
-    setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o))
-  }
+  await fetch(`http://localhost:5000/api/orders/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status })
+  })
+  setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o))
+}
 
   const filtered = filter === 'all' ? orders : orders.filter(o => o.status === filter)
 

@@ -1,12 +1,12 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { supabase } from '../supabase/client'
 import '../styles/Admin.css'
 
 function AdminLayout() {
   const navigate = useNavigate()
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut()
+  const handleLogout = () => {
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
     navigate('/login')
   }
 

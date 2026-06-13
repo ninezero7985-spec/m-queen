@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { supabase } from '../supabase/client'
 import ProductCard from '../components/ProductCard'
 import '../styles/Home.css'
 
@@ -9,19 +8,15 @@ function Home() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      const { data } = await supabase
-        .from('products')
-        .select('*')
-        .eq('is_active', true)
-        .order('created_at', { ascending: false })
-        .limit(8)
-
-      setNewProducts(data || [])
-      setLoading(false)
-    }
-    fetchProducts()
-  }, [])
+  const fetchProducts = async () => {
+    const res = await fetch('http://localhost:5000/api/products')
+    const data = await res.json()
+    const filtered = data.filter(p => p.is_active).slice(0, 8)
+    setNewProducts(filtered)
+    setLoading(false)
+  }
+  fetchProducts()
+}, [])
 
   return (
     <div className="home">
