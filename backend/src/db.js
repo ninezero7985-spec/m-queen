@@ -1,13 +1,11 @@
 const bcrypt = require('bcryptjs')
+const db = require('./database')
 
-const users = [
-  {
-    id: 1,
-    full_name: 'Admin',
-    email: 'admin@mqueen.com',
-    password: bcrypt.hashSync('admin123', 10),
-    role: 'admin'
-  }
-]
+// Admin foydalanuvchi mavjud bo'lmasa yaratish
+const admin = db.prepare('SELECT * FROM users WHERE email = ?').get('admin@mqueen.com')
+if (!admin) {
+  const hashedPassword = bcrypt.hashSync('admin123', 10)
+  db.prepare('INSERT INTO users (full_name, email, password, role) VALUES (?, ?, ?, ?)').run('Admin', 'admin@mqueen.com', hashedPassword, 'admin')
+}
 
-module.exports = users
+module.exports = db

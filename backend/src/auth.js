@@ -1,7 +1,7 @@
 const express = require('express')
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
-const users = require('./db')
+const db = require('./database')
 
 const router = express.Router()
 
@@ -9,12 +9,11 @@ const router = express.Router()
 router.post('/register', async (req, res) => {
   const { full_name, email, password } = req.body
 
-  const exists = users.find(u => u.email === email)
+  const exists = db.prepare('SELECT * FROM users WHERE email = ?').get(email)
   if (exists) return res.status(400).json({ message: 'Bu email allaqachon mavjud' })
 
   const hashedPassword = await bcrypt.hash(password, 10)
-  const user = { id: Date.now(), full_name, email, password: hashedPassword, role: 'user' }
-  users.push(user)
+  db.prepare('INSERT INTO users (full_name, email, password, role) VALUES (?, ?, ?, ?)').run(full_name, email, hashedPassword, 'user')
 
   res.json({ message: 'Ro\'yxatdan o\'tdingiz!' })
 })
@@ -23,7 +22,7 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
   const { email, password } = req.body
 
-  const user = users.find(u => u.email === email)
+  const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email)
   if (!user) return res.status(400).json({ message: 'Email yoki parol noto\'g\'ri' })
 
   const isMatch = await bcrypt.compare(password, user.password)
