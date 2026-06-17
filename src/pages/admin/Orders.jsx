@@ -16,25 +16,26 @@ function Orders() {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
 
-  useEffect(() => {
-    fetchOrders()
-  }, [])
+  const token = localStorage.getItem('token')
+  const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
+
+  useEffect(() => { fetchOrders() }, [])
 
   const fetchOrders = async () => {
-  const res = await fetch('http://localhost:5000/api/orders')
-  const data = await res.json()
-  setOrders(data)
-  setLoading(false)
-}
+    const res = await fetch('http://localhost:5000/api/orders', { headers })
+    const data = await res.json()
+    setOrders(data)
+    setLoading(false)
+  }
 
   const updateStatus = async (id, status) => {
-  await fetch(`http://localhost:5000/api/orders/${id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ status })
-  })
-  setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o))
-}
+    await fetch(`http://localhost:5000/api/orders/${id}`, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify({ status })
+    })
+    setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o))
+  }
 
   const filtered = filter === 'all' ? orders : orders.filter(o => o.status === filter)
 
@@ -67,11 +68,7 @@ function Orders() {
                   <p>{order.phone}</p>
                 </div>
                 <div>
-                  <select
-                    value={order.status}
-                    onChange={(e) => updateStatus(order.id, e.target.value)}
-                    className="status-select"
-                  >
+                  <select value={order.status} onChange={(e) => updateStatus(order.id, e.target.value)} className="status-select">
                     {STATUS_OPTIONS.map(s => (
                       <option key={s} value={s}>{STATUS_LABELS[s]}</option>
                     ))}

@@ -14,6 +14,7 @@ import AdminDashboard from './pages/admin/Dashboard'
 import AdminProducts from './pages/admin/Products'
 import AdminOrders from './pages/admin/Orders'
 import Register from './pages/Register'
+import Contact from './pages/Contact'
 
 const router = createBrowserRouter([
   {
@@ -21,13 +22,14 @@ const router = createBrowserRouter([
     element: <Layout />,
     errorElement: <ErrorPage />,
     children: [
-      { path: 'register', element: <Register /> },
       { index: true, element: <Home /> },
+      { path: 'register', element: <Register /> },
       { path: 'shop', element: <Shop /> },
       { path: 'shop/:id', element: <ProductDetail /> },
       { path: 'cart', element: <Cart /> },
       { path: 'checkout', element: <Checkout /> },
       { path: 'order-success', element: <OrderSuccess /> },
+      { path: 'contact', element: <Contact /> },
       {
         path: 'admin',
         element: <AdminRoute><AdminLayout /></AdminRoute>,

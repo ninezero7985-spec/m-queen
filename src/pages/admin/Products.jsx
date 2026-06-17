@@ -37,10 +37,6 @@ const compressImage = (file) => {
   })
 }
 
-const getFileNameFromUrl = (url) => {
-  try { return url.split('/').pop().split('?')[0] } catch { return null }
-}
-
 const MAX_IMAGES = 3
 
 function Notification({ message, type, onClose }) {
@@ -51,21 +47,12 @@ function Notification({ message, type, onClose }) {
 
   return (
     <div style={{
-      position: 'fixed',
-      top: '80px',
-      right: '24px',
+      position: 'fixed', top: '80px', right: '24px',
       background: type === 'error' ? 'var(--danger)' : '#1a1a1a',
-      color: 'white',
-      padding: '12px 20px',
-      borderRadius: 'var(--radius)',
-      fontSize: '14px',
-      fontWeight: '600',
-      zIndex: 9999,
-      boxShadow: 'var(--shadow-lg)',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '10px',
-      animation: 'slideDown 0.3s ease',
+      color: 'white', padding: '12px 20px', borderRadius: 'var(--radius)',
+      fontSize: '14px', fontWeight: '600', zIndex: 9999,
+      boxShadow: 'var(--shadow-lg)', display: 'flex', alignItems: 'center',
+      gap: '10px', animation: 'slideDown 0.3s ease',
     }}>
       {message}
       <button onClick={onClose} style={{ color: 'white', opacity: 0.7, fontSize: '18px' }}>×</button>
@@ -88,16 +75,21 @@ function Products() {
   const [notification, setNotification] = useState(null)
   const fileInputRef = useRef(null)
 
+  const token = localStorage.getItem('token')
+  const authHeaders = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
+
   const showNotif = (message, type = 'success') => setNotification({ message, type })
 
   useEffect(() => { fetchProducts() }, [])
 
   const fetchProducts = async () => {
-  const res = await fetch('http://localhost:5000/api/products')
-  const data = await res.json()
-  setProducts(data)
-  setLoading(false)
-}
+    const res = await fetch('http://localhost:5000/api/products/all', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    const data = await res.json()
+    setProducts(data)
+    setLoading(false)
+  }
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
@@ -118,22 +110,17 @@ function Products() {
 
   const totalImages = savedImages.length + pendingFiles.length
 
-  // Rasm tanlaganda — faqat preview, siqish yo'q
   const handleImageSelect = async (e) => {
     const files = Array.from(e.target.files)
     const allowed = MAX_IMAGES - totalImages
     if (allowed <= 0) return
-
     const selected = files.slice(0, allowed)
     const newPreviews = []
     const newRawFiles = []
-
     for (const file of selected) {
-      const previewUrl = URL.createObjectURL(file)
-      newPreviews.push(previewUrl)
+      newPreviews.push(URL.createObjectURL(file))
       newRawFiles.push(file)
     }
-
     setPendingPreviews(prev => [...prev, ...newPreviews])
     setPendingFiles(prev => [...prev, ...newRawFiles])
     e.target.value = ''
@@ -147,66 +134,52 @@ function Products() {
     setPendingFiles(prev => prev.filter((_, i) => i !== index))
   }
 
-  // Saqlash bosilganda — siqish + yuklash
   const uploadPendingFiles = async () => {
-  const urls = []
-  for (const file of pendingFiles) {
-    const compressed = await compressImage(file)
-    const base64 = await new Promise((resolve) => {
-      const reader = new FileReader()
-      reader.onload = () => resolve(reader.result)
-      reader.readAsDataURL(compressed)
-    })
-    urls.push(base64)
+    const urls = []
+    for (const file of pendingFiles) {
+      const compressed = await compressImage(file)
+      const base64 = await new Promise((resolve) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(reader.result)
+        reader.readAsDataURL(compressed)
+      })
+      urls.push(base64)
+    }
+    return urls
   }
-  return urls
-}
 
   const handleSubmit = async (e) => {
-  e.preventDefault()
+    e.preventDefault()
+    if (totalImages === 0) { showNotif('❌ Kamida 1 ta rasm qo\'shing', 'error'); return }
+    setUploading(true)
+    if (pendingFiles.length > 0) showNotif('⏳ Rasmlar siqilmoqda...')
 
-  if (totalImages === 0) {
-    showNotif('❌ Kamida 1 ta rasm qo\'shing', 'error')
-    return
+    const newUrls = await uploadPendingFiles()
+    const allImages = [...savedImages, ...newUrls]
+    const payload = {
+      ...form,
+      price: Number(form.price),
+      old_price: form.old_price ? Number(form.old_price) : null,
+      stock: Number(form.stock),
+      images: allImages,
+    }
+
+    if (editId) {
+      await fetch(`http://localhost:5000/api/products/${editId}`, {
+        method: 'PUT', headers: authHeaders, body: JSON.stringify(payload)
+      })
+      showNotif('✅ Mahsulot yangilandi')
+    } else {
+      await fetch('http://localhost:5000/api/products', {
+        method: 'POST', headers: authHeaders, body: JSON.stringify(payload)
+      })
+      showNotif('✅ Mahsulot qo\'shildi')
+    }
+
+    setUploading(false)
+    fetchProducts()
+    closeForm()
   }
-
-  setUploading(true)
-
-  if (pendingFiles.length > 0) {
-    showNotif('⏳ Rasmlar siqilmoqda...')
-  }
-
-  const newUrls = await uploadPendingFiles()
-  const allImages = [...savedImages, ...newUrls]
-
-  const payload = {
-    ...form,
-    price: Number(form.price),
-    old_price: form.old_price ? Number(form.old_price) : null,
-    stock: Number(form.stock),
-    images: allImages,
-  }
-
-  if (editId) {
-    await fetch(`http://localhost:5000/api/products/${editId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    })
-    showNotif('✅ Mahsulot yangilandi')
-  } else {
-    await fetch('http://localhost:5000/api/products', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    })
-    showNotif('✅ Mahsulot qo\'shildi')
-  }
-
-  setUploading(false)
-  fetchProducts()
-  closeForm()
-}
 
   const closeForm = () => {
     pendingPreviews.forEach(url => URL.revokeObjectURL(url))
@@ -220,15 +193,10 @@ function Products() {
 
   const handleEdit = (product) => {
     setForm({
-      name: product.name,
-      description: product.description || '',
-      price: product.price,
-      old_price: product.old_price || '',
-      category: product.category,
-      sizes: product.sizes || [],
-      colors: product.colors || [],
-      stock: product.stock,
-      is_active: product.is_active,
+      name: product.name, description: product.description || '',
+      price: product.price, old_price: product.old_price || '',
+      category: product.category, sizes: product.sizes || [],
+      colors: product.colors || [], stock: product.stock, is_active: product.is_active,
     })
     setSavedImages(product.images || [])
     setPendingFiles([])
@@ -238,23 +206,19 @@ function Products() {
   }
 
   const handleDelete = async (id) => {
-  if (!confirm('Mahsulotni o\'chirasizmi?')) return
-  await fetch(`http://localhost:5000/api/products/${id}`, {
-    method: 'DELETE'
-  })
-  showNotif('🗑️ Mahsulot o\'chirildi')
-  fetchProducts()
-}
+    if (!confirm('Mahsulotni o\'chirasizmi?')) return
+    await fetch(`http://localhost:5000/api/products/${id}`, { method: 'DELETE', headers: authHeaders })
+    showNotif('🗑️ Mahsulot o\'chirildi')
+    fetchProducts()
+  }
 
   const handleToggleActive = async (id, is_active) => {
-  await fetch(`http://localhost:5000/api/products/${id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ is_active: !is_active })
-  })
-  showNotif(is_active ? '🙈 Yashirildi' : '👁️ Ko\'rsatildi')
-  fetchProducts()
-}
+    await fetch(`http://localhost:5000/api/products/${id}`, {
+      method: 'PUT', headers: authHeaders, body: JSON.stringify({ is_active: !is_active })
+    })
+    showNotif(is_active ? '🙈 Yashirildi' : '👁️ Ko\'rsatildi')
+    fetchProducts()
+  }
 
   if (loading) return <p className="loading">Yuklanmoqda...</p>
 
@@ -263,15 +227,9 @@ function Products() {
       {notification && (
         <Notification message={notification.message} type={notification.type} onClose={() => setNotification(null)} />
       )}
-
       <style>{`
-        @keyframes slideDown {
-          from { transform: translateY(-10px); opacity: 0; }
-          to { transform: translateY(0); opacity: 1; }
-        }
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
+        @keyframes slideDown { from { transform: translateY(-10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes spin { to { transform: rotate(360deg); } }
       `}</style>
 
       <div className="admin-page-header">
@@ -286,17 +244,14 @@ function Products() {
           <div className="modal" onClick={e => e.stopPropagation()}>
             <h2>{editId ? 'Tahrirlash' : 'Yangi mahsulot'}</h2>
             <form onSubmit={handleSubmit} className="product-form">
-
               <div className="form-group">
                 <label>Nomi</label>
                 <input type="text" name="name" value={form.name} onChange={handleChange} required />
               </div>
-
               <div className="form-group">
                 <label>Tavsif</label>
                 <textarea name="description" value={form.description} onChange={handleChange} rows={3} />
               </div>
-
               <div className="form-row">
                 <div className="form-group">
                   <label>Narx (so'm)</label>
@@ -307,7 +262,6 @@ function Products() {
                   <input type="number" name="old_price" value={form.old_price} onChange={handleChange} />
                 </div>
               </div>
-
               <div className="form-row">
                 <div className="form-group">
                   <label>Kategoriya</label>
@@ -320,7 +274,6 @@ function Products() {
                   <input type="number" name="stock" value={form.stock} onChange={handleChange} required />
                 </div>
               </div>
-
               <div className="form-group">
                 <label>O'lchamlar</label>
                 <div className="tag-input">
@@ -328,12 +281,9 @@ function Products() {
                   <button type="button" onClick={addSize}>+</button>
                 </div>
                 <div className="tags">
-                  {form.sizes.map(s => (
-                    <span key={s} className="tag">{s} <button type="button" onClick={() => removeSize(s)}>×</button></span>
-                  ))}
+                  {form.sizes.map(s => <span key={s} className="tag">{s} <button type="button" onClick={() => removeSize(s)}>×</button></span>)}
                 </div>
               </div>
-
               <div className="form-group">
                 <label>Ranglar</label>
                 <div className="tag-input">
@@ -341,12 +291,9 @@ function Products() {
                   <button type="button" onClick={addColor}>+</button>
                 </div>
                 <div className="tags">
-                  {form.colors.map(c => (
-                    <span key={c} className="tag">{c} <button type="button" onClick={() => removeColor(c)}>×</button></span>
-                  ))}
+                  {form.colors.map(c => <span key={c} className="tag">{c} <button type="button" onClick={() => removeColor(c)}>×</button></span>)}
                 </div>
               </div>
-
               <div className="form-group">
                 <label>Rasmlar ({totalImages}/{MAX_IMAGES}) <span style={{color:'var(--danger)'}}>*</span></label>
                 <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleImageSelect} style={{ display: 'none' }} />
@@ -366,38 +313,25 @@ function Products() {
                     ))}
                     {totalImages < MAX_IMAGES && (
                       <button type="button" className="image-add-btn" onClick={() => fileInputRef.current?.click()}>
-                        <span>+</span>
-                        <small>Rasm</small>
+                        <span>+</span><small>Rasm</small>
                       </button>
                     )}
                   </div>
-                  {totalImages >= MAX_IMAGES && (
-                    <p style={{ fontSize: '12px', color: 'var(--danger)', marginTop: '8px' }}>Maksimum 3 ta rasm</p>
-                  )}
+                  {totalImages >= MAX_IMAGES && <p style={{ fontSize: '12px', color: 'var(--danger)', marginTop: '8px' }}>Maksimum 3 ta rasm</p>}
                 </div>
               </div>
-
               <div className="form-group checkbox-group">
                 <label>
                   <input type="checkbox" name="is_active" checked={form.is_active} onChange={handleChange} />
                   Faol (saytda ko'rinadi)
                 </label>
               </div>
-
               <div className="form-actions">
                 <button type="button" className="btn-outline" onClick={closeForm}>Bekor qilish</button>
                 <button type="submit" className="btn-primary" disabled={uploading}>
                   {uploading ? (
                     <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{
-                        width: '16px',
-                        height: '16px',
-                        border: '2px solid rgba(255,255,255,0.4)',
-                        borderTop: '2px solid white',
-                        borderRadius: '50%',
-                        display: 'inline-block',
-                        animation: 'spin 0.7s linear infinite'
-                      }} />
+                      <span style={{ width: '16px', height: '16px', border: '2px solid rgba(255,255,255,0.4)', borderTop: '2px solid white', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.7s linear infinite' }} />
                       Siqilmoqda...
                     </span>
                   ) : editId ? 'Saqlash' : "Qo'shish"}
@@ -412,11 +346,7 @@ function Products() {
         {products.map(product => (
           <div key={product.id} className={`product-admin-card ${!product.is_active ? 'inactive' : ''}`}>
             <div className="product-admin-img">
-              {product.images?.[0] ? (
-                <img src={product.images[0]} alt={product.name} />
-              ) : (
-                <div className="product-card-no-img">Rasm yo'q</div>
-              )}
+              {product.images?.[0] ? <img src={product.images[0]} alt={product.name} /> : <div className="product-card-no-img">Rasm yo'q</div>}
             </div>
             <div className="product-admin-info">
               <h3>{product.name}</h3>

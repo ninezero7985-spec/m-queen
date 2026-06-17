@@ -7,30 +7,28 @@ function Dashboard() {
   const [recentOrders, setRecentOrders] = useState([])
   const [loading, setLoading] = useState(true)
 
+  const token = localStorage.getItem('token')
+  const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
+
   useEffect(() => {
-  const fetchStats = async () => {
-    const [ordersRes, productsRes] = await Promise.all([
-      fetch('http://localhost:5000/api/orders'),
-      fetch('http://localhost:5000/api/products'),
-    ])
+    const fetchStats = async () => {
+      const [ordersRes, productsRes] = await Promise.all([
+        fetch('http://localhost:5000/api/orders', { headers }),
+        fetch('http://localhost:5000/api/products/all', { headers }),
+      ])
 
-    const orders = await ordersRes.json()
-    const products = await productsRes.json()
+      const orders = await ordersRes.json()
+      const products = await productsRes.json()
 
-    const newOrds = orders.filter(o => o.status === 'new').slice(0, 5)
-    const revenue = orders.reduce((sum, o) => sum + (o.total || 0), 0)
+      const newOrds = orders.filter(o => o.status === 'new').slice(0, 5)
+      const revenue = orders.reduce((sum, o) => sum + (o.total || 0), 0)
 
-    setStats({
-      orders: orders.length,
-      products: products.length,
-      newOrders: newOrds.length,
-      revenue
-    })
-    setRecentOrders(newOrds)
-    setLoading(false)
-  }
-  fetchStats()
-}, [])
+      setStats({ orders: orders.length, products: products.length, newOrders: newOrds.length, revenue })
+      setRecentOrders(newOrds)
+      setLoading(false)
+    }
+    fetchStats()
+  }, [])
 
   if (loading) return <p className="loading">Yuklanmoqda...</p>
 

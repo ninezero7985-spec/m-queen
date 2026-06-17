@@ -14,6 +14,7 @@ function Navbar() {
       <div className={`navbar-links ${menuOpen ? 'open' : ''}`}>
         <Link to="/" onClick={() => setMenuOpen(false)}>Bosh sahifa</Link>
         <Link to="/shop" onClick={() => setMenuOpen(false)}>Shop</Link>
+        <Link to="/contact" onClick={() => setMenuOpen(false)}>Kontakt</Link>
       </div>
 
       <div className="navbar-actions">
