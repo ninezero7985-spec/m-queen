@@ -31,7 +31,8 @@ function Checkout() {
 
     const delivery_fee = form.delivery_type === 'delivery' ? 15000 : 0
 
-    const res = await fetch('http://localhost:5000/api/orders', {
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+    const res = await fetch(`${API_URL}/api/orders`, {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
