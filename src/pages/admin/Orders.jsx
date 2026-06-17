@@ -22,14 +22,14 @@ function Orders() {
   useEffect(() => { fetchOrders() }, [])
 
   const fetchOrders = async () => {
-    const res = await fetch('http://localhost:5000/api/orders', { headers })
+    const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/orders`, { headers })
     const data = await res.json()
     setOrders(data)
     setLoading(false)
   }
 
   const updateStatus = async (id, status) => {
-    await fetch(`http://localhost:5000/api/orders/${id}`, {
+    await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/orders/${id}`, {
       method: 'PUT',
       headers,
       body: JSON.stringify({ status })

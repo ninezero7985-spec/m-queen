@@ -83,7 +83,7 @@ function Products() {
   useEffect(() => { fetchProducts() }, [])
 
   const fetchProducts = async () => {
-    const res = await fetch('http://localhost:5000/api/products/all', {
+    const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/products/all`, {
       headers: { Authorization: `Bearer ${token}` }
     })
     const data = await res.json()
@@ -165,12 +165,12 @@ function Products() {
     }
 
     if (editId) {
-      await fetch(`http://localhost:5000/api/products/${editId}`, {
+      await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/products/${editId}`, {
         method: 'PUT', headers: authHeaders, body: JSON.stringify(payload)
       })
       showNotif('✅ Mahsulot yangilandi')
     } else {
-      await fetch('http://localhost:5000/api/products', {
+      await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/products`, {
         method: 'POST', headers: authHeaders, body: JSON.stringify(payload)
       })
       showNotif('✅ Mahsulot qo\'shildi')
@@ -207,13 +207,13 @@ function Products() {
 
   const handleDelete = async (id) => {
     if (!confirm('Mahsulotni o\'chirasizmi?')) return
-    await fetch(`http://localhost:5000/api/products/${id}`, { method: 'DELETE', headers: authHeaders })
+    await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/products/${id}`, { method: 'DELETE', headers: authHeaders })
     showNotif('🗑️ Mahsulot o\'chirildi')
     fetchProducts()
   }
 
   const handleToggleActive = async (id, is_active) => {
-    await fetch(`http://localhost:5000/api/products/${id}`, {
+    await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/products/${id}`, {
       method: 'PUT', headers: authHeaders, body: JSON.stringify({ is_active: !is_active })
     })
     showNotif(is_active ? '🙈 Yashirildi' : '👁️ Ko\'rsatildi')

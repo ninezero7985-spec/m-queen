@@ -16,7 +16,7 @@ function ProductDetail() {
 
   useEffect(() => {
   const fetchProduct = async () => {
-    const res = await fetch('http://localhost:5000/api/products')
+    const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/products`)
     const data = await res.json()
     const found = data.find(p => String(p.id) === String(id))
     setProduct(found || null)

@@ -13,8 +13,8 @@ function Dashboard() {
   useEffect(() => {
     const fetchStats = async () => {
       const [ordersRes, productsRes] = await Promise.all([
-        fetch('http://localhost:5000/api/orders', { headers }),
-        fetch('http://localhost:5000/api/products/all', { headers }),
+        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/orders`, { headers }),
+        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/products/all`, { headers }),
       ])
 
       const orders = await ordersRes.json()
