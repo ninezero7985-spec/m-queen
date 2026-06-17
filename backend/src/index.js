@@ -1,20 +1,17 @@
-require('./db')
-
 const express = require('express')
 const cors = require('cors')
-require('dotenv').config()
+const dotenv = require('dotenv')
 
-const authRoutes = require('./auth')
-const productRoutes = require('./products')
-const orderRoutes = require('./orders')
+dotenv.config()
 
 const app = express()
 app.use(cors())
-app.use(express.json({ limit: '10mb' }))
+app.use(express.json({ limit: '50mb' }))
+app.use(express.urlencoded({ limit: '50mb', extended: true }))
 
-app.use('/api/auth', authRoutes)
-app.use('/api/products', productRoutes)
-app.use('/api/orders', orderRoutes)
+app.use('/api/auth', require('./auth'))
+app.use('/api/products', require('./products'))
+app.use('/api/orders', require('./orders'))
 
 const PORT = process.env.PORT || 5000
 app.listen(PORT, () => console.log(`Server ${PORT} portda ishlamoqda`))

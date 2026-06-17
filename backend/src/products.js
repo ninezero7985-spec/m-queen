@@ -1,63 +1,74 @@
 const express = require('express')
-const db = require('./database')
+const fs = require('fs')
+const path = require('path')
+const { v4: uuidv4 } = require('uuid')
+const jwt = require('jsonwebtoken')
 
 const router = express.Router()
+const PRODUCTS_FILE = path.join(__dirname, '../data/products.json')
 
-// Barcha mahsulotlar
+const getProducts = () => JSON.parse(fs.readFileSync(PRODUCTS_FILE, 'utf-8'))
+const saveProducts = (products) => fs.writeFileSync(PRODUCTS_FILE, JSON.stringify(products, null, 2))
+
+// Token tekshirish
+const authMiddleware = (req, res, next) => {
+  const token = req.headers.authorization?.split(' ')[1]
+  if (!token) return res.status(401).json({ message: 'Token kerak' })
+  try {
+    req.user = jwt.verify(token, process.env.JWT_SECRET || 'mqueen_secret')
+    next()
+  } catch {
+    res.status(401).json({ message: 'Token noto\'g\'ri' })
+  }
+}
+
+// Barcha mahsulotlar (hamma ko'ra oladi)
 router.get('/', (req, res) => {
-  const products = db.prepare('SELECT * FROM products ORDER BY created_at DESC').all()
-  const parsed = products.map(p => ({
-    ...p,
-    sizes: JSON.parse(p.sizes || '[]'),
-    colors: JSON.parse(p.colors || '[]'),
-    images: JSON.parse(p.images || '[]'),
-    is_active: p.is_active === 1,
-  }))
-  res.json(parsed)
+  const products = getProducts()
+  res.json(products.filter(p => p.is_active))
 })
 
-// Mahsulot qo'shish
-router.post('/', (req, res) => {
-  const { name, description, price, old_price, category, sizes, colors, stock, images, is_active } = req.body
-  const result = db.prepare(`
-    INSERT INTO products (name, description, price, old_price, category, sizes, colors, stock, images, is_active)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(name, description, price, old_price, category, JSON.stringify(sizes), JSON.stringify(colors), stock, JSON.stringify(images), is_active ? 1 : 0)
-
-  res.json({ id: result.lastInsertRowid, ...req.body })
+// Admin - barcha mahsulotlar
+router.get('/all', authMiddleware, (req, res) => {
+  res.json(getProducts())
 })
 
-// Mahsulot yangilash
-router.put('/:id', (req, res) => {
-  const id = req.params.id
-  const existing = db.prepare('SELECT * FROM products WHERE id = ?').get(id)
-  if (!existing) return res.status(404).json({ message: 'Topilmadi' })
-
-  const data = { ...existing, ...req.body }
-
-  db.prepare(`
-    UPDATE products SET name=?, description=?, price=?, old_price=?, category=?, sizes=?, colors=?, stock=?, images=?, is_active=?
-    WHERE id=?
-  `).run(
-    data.name,
-    data.description,
-    data.price,
-    data.old_price,
-    data.category,
-    typeof data.sizes === 'string' ? data.sizes : JSON.stringify(data.sizes),
-    typeof data.colors === 'string' ? data.colors : JSON.stringify(data.colors),
-    data.stock,
-    typeof data.images === 'string' ? data.images : JSON.stringify(data.images),
-    data.is_active === true || data.is_active === 1 ? 1 : 0,
-    id
-  )
-
-  res.json({ message: 'Yangilandi' })
+// Bitta mahsulot
+router.get('/:id', (req, res) => {
+  const products = getProducts()
+  const product = products.find(p => p.id === req.params.id)
+  if (!product) return res.status(404).json({ message: 'Topilmadi' })
+  res.json(product)
 })
 
-// Mahsulot o'chirish
-router.delete('/:id', (req, res) => {
-  db.prepare('DELETE FROM products WHERE id = ?').run(req.params.id)
+// Mahsulot qo'shish (admin)
+router.post('/', authMiddleware, (req, res) => {
+  const products = getProducts()
+  const newProduct = {
+    id: uuidv4(),
+    ...req.body,
+    created_at: new Date().toISOString()
+  }
+  products.unshift(newProduct)
+  saveProducts(products)
+  res.json(newProduct)
+})
+
+// Mahsulot yangilash (admin)
+router.put('/:id', authMiddleware, (req, res) => {
+  const products = getProducts()
+  const index = products.findIndex(p => p.id === req.params.id)
+  if (index === -1) return res.status(404).json({ message: 'Topilmadi' })
+  products[index] = { ...products[index], ...req.body }
+  saveProducts(products)
+  res.json(products[index])
+})
+
+// Mahsulot o'chirish (admin)
+router.delete('/:id', authMiddleware, (req, res) => {
+  const products = getProducts()
+  const filtered = products.filter(p => p.id !== req.params.id)
+  saveProducts(filtered)
   res.json({ message: 'O\'chirildi' })
 })
 

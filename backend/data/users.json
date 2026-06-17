@@ -1,0 +1,9 @@
+[
+  {
+    "id": 1,
+    "full_name": "Admin",
+    "email": "admin@mqueen.uz",
+    "password": "$2a$10$9dN5gjVYJsK/H6E2Rtq4vunpVvNgKSC/6/hZvRZpm7R8t53aBMkBK",
+    "role": "admin"
+  }
+]

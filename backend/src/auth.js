@@ -1,36 +1,51 @@
 const express = require('express')
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
-const db = require('./database')
+const fs = require('fs')
+const path = require('path')
 
 const router = express.Router()
+const USERS_FILE = path.join(__dirname, '../data/users.json')
 
-// Ro'yxatdan o'tish
-router.post('/register', async (req, res) => {
-  const { full_name, email, password } = req.body
+const getUsers = () => JSON.parse(fs.readFileSync(USERS_FILE, 'utf-8'))
+const saveUsers = (users) => fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2))
 
-  const exists = db.prepare('SELECT * FROM users WHERE email = ?').get(email)
-  if (exists) return res.status(400).json({ message: 'Bu email allaqachon mavjud' })
-
-  const hashedPassword = await bcrypt.hash(password, 10)
-  db.prepare('INSERT INTO users (full_name, email, password, role) VALUES (?, ?, ?, ?)').run(full_name, email, hashedPassword, 'user')
-
-  res.json({ message: 'Ro\'yxatdan o\'tdingiz!' })
-})
+// Admin yaratish (birinchi ishga tushganda)
+const initAdmin = () => {
+  const users = getUsers()
+  if (users.length === 0) {
+    const hash = bcrypt.hashSync('admin123', 10)
+    users.push({
+      id: 1,
+      full_name: 'Admin',
+      email: 'admin@mqueen.uz',
+      password: hash,
+      role: 'admin'
+    })
+    saveUsers(users)
+    console.log('Admin yaratildi: admin@mqueen.uz / admin123')
+  }
+}
+initAdmin()
 
 // Kirish
 router.post('/login', async (req, res) => {
   const { email, password } = req.body
+  const users = getUsers()
+  const user = users.find(u => u.email === email)
 
-  const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email)
   if (!user) return res.status(400).json({ message: 'Email yoki parol noto\'g\'ri' })
 
-  const isMatch = await bcrypt.compare(password, user.password)
+  const isMatch = bcrypt.compareSync(password, user.password)
   if (!isMatch) return res.status(400).json({ message: 'Email yoki parol noto\'g\'ri' })
 
   if (user.role !== 'admin') return res.status(403).json({ message: 'Sizda admin huquqi yo\'q' })
 
-  const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET || 'secret123', { expiresIn: '7d' })
+  const token = jwt.sign(
+    { id: user.id, email: user.email, role: user.role },
+    process.env.JWT_SECRET || 'mqueen_secret',
+    { expiresIn: '7d' }
+  )
 
   res.json({ token, user: { id: user.id, full_name: user.full_name, email: user.email, role: user.role } })
 })
