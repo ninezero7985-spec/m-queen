@@ -3,20 +3,28 @@ import { Link } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
 import '../styles/Home.css'
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+
 function Home() {
   const [newProducts, setNewProducts] = useState([])
+  const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-  const fetchProducts = async () => {
-    const res = await fetch('http://localhost:5000/api/products')
-    const data = await res.json()
-    const filtered = data.filter(p => p.is_active).slice(0, 8)
-    setNewProducts(filtered)
-    setLoading(false)
-  }
-  fetchProducts()
-}, [])
+    const fetchData = async () => {
+      const [productsRes, categoriesRes] = await Promise.all([
+        fetch(`${API_URL}/api/products`),
+        fetch(`${API_URL}/api/categories`)
+      ])
+      const products = await productsRes.json()
+      const cats = await categoriesRes.json()
+
+      setNewProducts(products.filter(p => p.is_active).slice(0, 8))
+      setCategories(cats)
+      setLoading(false)
+    }
+    fetchData()
+  }, [])
 
   return (
     <div className="home">
@@ -33,7 +41,7 @@ function Home() {
       <section className="categories">
         <h2>Kategoriyalar</h2>
         <div className="categories-grid">
-          {['Ko\'ylaklar', 'Yubkalar', 'Shimlar', 'Kurtalar', 'Sport', 'Aksessuarlar'].map(cat => (
+          {categories.map(cat => (
             <Link key={cat} to={`/shop?category=${cat}`} className="category-card">
               {cat}
             </Link>
