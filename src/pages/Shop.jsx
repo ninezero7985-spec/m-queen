@@ -3,10 +3,11 @@ import { useSearchParams } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
 import '../styles/Shop.css'
 
-const CATEGORIES = ['Barchasi', "Ko'ylaklar", 'Yubkalar', 'Shimlar', 'Kurtalar', 'Sport', 'Aksessuarlar']
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 
 function Shop() {
   const [products, setProducts] = useState([])
+  const [categories, setCategories] = useState(['Barchasi'])
   const [loading, setLoading] = useState(true)
   const [searchParams, setSearchParams] = useSearchParams()
 
@@ -14,23 +15,36 @@ function Shop() {
   const minPrice = searchParams.get('min') || ''
   const maxPrice = searchParams.get('max') || ''
 
+  // Kategoriyalarni backenddan olish
   useEffect(() => {
-  const fetchProducts = async () => {
-    setLoading(true)
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
-    const res = await fetch(`${API_URL}/api/products`)
-    const data = await res.json()
+    const fetchCategories = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/categories`)
+        const data = await res.json()
+        setCategories(['Barchasi', ...data])
+      } catch {
+        setCategories(['Barchasi'])
+      }
+    }
+    fetchCategories()
+  }, [])
 
-    let filtered = data.filter(p => p.is_active)
-    if (category !== 'Barchasi') filtered = filtered.filter(p => p.category === category)
-    if (minPrice) filtered = filtered.filter(p => p.price >= Number(minPrice))
-    if (maxPrice) filtered = filtered.filter(p => p.price <= Number(maxPrice))
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setLoading(true)
+      const res = await fetch(`${API_URL}/api/products`)
+      const data = await res.json()
 
-    setProducts(filtered)
-    setLoading(false)
-  }
-  fetchProducts()
-}, [category, minPrice, maxPrice])
+      let filtered = data.filter(p => p.is_active)
+      if (category !== 'Barchasi') filtered = filtered.filter(p => p.category === category)
+      if (minPrice) filtered = filtered.filter(p => p.price >= Number(minPrice))
+      if (maxPrice) filtered = filtered.filter(p => p.price <= Number(maxPrice))
+
+      setProducts(filtered)
+      setLoading(false)
+    }
+    fetchProducts()
+  }, [category, minPrice, maxPrice])
 
   const setCategory = (cat) => {
     const params = {}
@@ -53,11 +67,10 @@ function Shop() {
 
   return (
     <div className="shop-page">
-      {/* Filter sidebar */}
       <aside className="shop-filter">
         <h3>Kategoriya</h3>
         <ul>
-          {CATEGORIES.map(cat => (
+          {categories.map(cat => (
             <li key={cat}>
               <button
                 className={category === cat ? 'active' : ''}
@@ -77,7 +90,6 @@ function Shop() {
         </form>
       </aside>
 
-      {/* Mahsulotlar */}
       <div className="shop-products">
         <h2>{category === 'Barchasi' ? 'Barcha mahsulotlar' : category}</h2>
         {loading ? (

@@ -18,6 +18,7 @@ function AdminLayout() {
           <NavLink to="/admin" end>📊 Dashboard</NavLink>
           <NavLink to="/admin/products">👗 Mahsulotlar</NavLink>
           <NavLink to="/admin/orders">📦 Buyurtmalar</NavLink>
+          <NavLink to="/admin/categories">🏷️ Kategoriyalar</NavLink>
         </nav>
         <div className="admin-sidebar-logout">
           <button onClick={handleLogout}>🚪 Chiqish</button>

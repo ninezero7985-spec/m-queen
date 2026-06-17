@@ -891,3 +891,117 @@
   outline: 2px solid var(--primary);
   border-radius: var(--radius-sm);
 }
+/* ===== KATEGORIYALAR ===== */
+.categories-add-box {
+  background: white;
+  border-radius: var(--radius);
+  border: 1px solid var(--gray-2);
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.categories-add-box h3 {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: var(--dark);
+}
+
+.categories-add-form {
+  display: flex;
+  gap: 12px;
+}
+
+.categories-add-form input {
+  flex: 1;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--gray-3);
+  font-size: 14px;
+  transition: var(--transition);
+  outline: none;
+  background: var(--gray-1);
+}
+
+.categories-add-form input:focus {
+  border-color: var(--primary);
+  background: white;
+}
+
+.categories-list-box {
+  background: white;
+  border-radius: var(--radius);
+  border: 1px solid var(--gray-2);
+  padding: 24px;
+}
+
+.categories-list-box h3 {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: var(--dark);
+}
+
+.categories-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.category-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--gray-2);
+  background: var(--gray-1);
+  transition: var(--transition);
+}
+
+.category-item:hover {
+  border-color: var(--primary);
+  background: var(--primary-light);
+}
+
+.category-item span {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--dark);
+}
+
+.category-item .btn-danger {
+  padding: 6px 14px;
+  font-size: 13px;
+  border-radius: var(--radius-sm);
+}
+
+/* Responsive kategoriyalar */
+@media (max-width: 768px) {
+  .categories-add-form {
+    flex-direction: column;
+  }
+
+  .categories-add-form input {
+    width: 100%;
+  }
+
+  .categories-add-form button {
+    width: 100%;
+  }
+
+  .categories-add-box,
+  .categories-list-box {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .category-item {
+    padding: 10px 12px;
+  }
+
+  .category-item span {
+    font-size: 13px;
+  }
+}

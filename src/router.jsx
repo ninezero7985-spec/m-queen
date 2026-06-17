@@ -13,6 +13,7 @@ import AdminRoute from './components/AdminRoute'
 import AdminDashboard from './pages/admin/Dashboard'
 import AdminProducts from './pages/admin/Products'
 import AdminOrders from './pages/admin/Orders'
+import AdminCategories from './pages/admin/Categories'
 import Register from './pages/Register'
 import Contact from './pages/Contact'
 
@@ -37,6 +38,7 @@ const router = createBrowserRouter([
           { index: true, element: <AdminDashboard /> },
           { path: 'products', element: <AdminProducts /> },
           { path: 'orders', element: <AdminOrders /> },
+          { path: 'categories', element: <AdminCategories /> },
         ]
       },
     ],

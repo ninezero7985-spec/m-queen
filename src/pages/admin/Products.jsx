@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import '../../styles/Admin.css'
 
-const CATEGORIES = ["Ko'ylaklar", 'Yubkalar', 'Shimlar', 'Kurtalar', 'Sport', 'Aksessuarlar']
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 
 const EMPTY_FORM = {
   name: '',
   description: '',
   price: '',
   old_price: '',
-  category: "Ko'ylaklar",
+  category: '',
   sizes: [],
   colors: [],
   stock: '',
@@ -62,6 +62,7 @@ function Notification({ message, type, onClose }) {
 
 function Products() {
   const [products, setProducts] = useState([])
+  const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(EMPTY_FORM)
@@ -80,10 +81,15 @@ function Products() {
 
   const showNotif = (message, type = 'success') => setNotification({ message, type })
 
-  useEffect(() => { fetchProducts() }, [])
+  useEffect(() => {
+    fetchProducts()
+    fetch(`${API_URL}/api/categories`)
+      .then(r => r.json())
+      .then(data => setCategories(data))
+  }, [])
 
   const fetchProducts = async () => {
-    const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/products/all`, {
+    const res = await fetch('http://localhost:5000/api/products/all', {
       headers: { Authorization: `Bearer ${token}` }
     })
     const data = await res.json()
@@ -165,12 +171,12 @@ function Products() {
     }
 
     if (editId) {
-      await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/products/${editId}`, {
+      await fetch(`http://localhost:5000/api/products/${editId}`, {
         method: 'PUT', headers: authHeaders, body: JSON.stringify(payload)
       })
       showNotif('✅ Mahsulot yangilandi')
     } else {
-      await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/products`, {
+      await fetch('http://localhost:5000/api/products', {
         method: 'POST', headers: authHeaders, body: JSON.stringify(payload)
       })
       showNotif('✅ Mahsulot qo\'shildi')
@@ -207,13 +213,13 @@ function Products() {
 
   const handleDelete = async (id) => {
     if (!confirm('Mahsulotni o\'chirasizmi?')) return
-    await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/products/${id}`, { method: 'DELETE', headers: authHeaders })
+    await fetch(`http://localhost:5000/api/products/${id}`, { method: 'DELETE', headers: authHeaders })
     showNotif('🗑️ Mahsulot o\'chirildi')
     fetchProducts()
   }
 
   const handleToggleActive = async (id, is_active) => {
-    await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/products/${id}`, {
+    await fetch(`http://localhost:5000/api/products/${id}`, {
       method: 'PUT', headers: authHeaders, body: JSON.stringify({ is_active: !is_active })
     })
     showNotif(is_active ? '🙈 Yashirildi' : '👁️ Ko\'rsatildi')
@@ -266,7 +272,7 @@ function Products() {
                 <div className="form-group">
                   <label>Kategoriya</label>
                   <select name="category" value={form.category} onChange={handleChange}>
-                    {CATEGORIES.map(c => <option key={c}>{c}</option>)}
+                    {categories.map(c => <option key={c}>{c}</option>)}
                   </select>
                 </div>
                 <div className="form-group">
