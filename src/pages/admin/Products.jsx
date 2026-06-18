@@ -241,7 +241,7 @@ function Products() {
       <div className="admin-page-header">
         <h1>Mahsulotlar</h1>
         <button className="btn-primary" onClick={() => {
-          setForm(EMPTY_FORM); setSavedImages([]); setPendingFiles([]); setPendingPreviews([]); setEditId(null); setShowForm(true)
+          setForm({...EMPTY_FORM, category: categories[0] || ''}); setSavedImages([]); setPendingFiles([]); setPendingPreviews([]); setEditId(null); setShowForm(true)
         }}>+ Qo'shish</button>
       </div>
 

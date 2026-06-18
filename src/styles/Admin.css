@@ -388,17 +388,17 @@
 }
 
 .product-admin-img {
-  aspect-ratio: 3/4;
-  max-height: 240px;
+  width: 100%;
+  height: 220px;
   background: var(--gray-1);
   overflow: hidden;
 }
 
 .product-admin-img img {
   width: 100%;
-  height: 100%;
+  height: 220px;
   object-fit: cover;
-  object-position: center top;
+  object-position: center;
 }
 
 .product-admin-info {

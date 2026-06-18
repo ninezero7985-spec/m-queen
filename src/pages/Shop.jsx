@@ -4,18 +4,19 @@ import ProductCard from '../components/ProductCard'
 import '../styles/Shop.css'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+const PER_PAGE = 6
 
 function Shop() {
   const [products, setProducts] = useState([])
   const [categories, setCategories] = useState(['Barchasi'])
   const [loading, setLoading] = useState(true)
+  const [page, setPage] = useState(1)
   const [searchParams, setSearchParams] = useSearchParams()
 
   const category = searchParams.get('category') || 'Barchasi'
   const minPrice = searchParams.get('min') || ''
   const maxPrice = searchParams.get('max') || ''
 
-  // Kategoriyalarni backenddan olish
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -32,6 +33,7 @@ function Shop() {
   useEffect(() => {
     const fetchProducts = async () => {
       setLoading(true)
+      setPage(1)
       const res = await fetch(`${API_URL}/api/products`)
       const data = await res.json()
 
@@ -65,6 +67,14 @@ function Shop() {
     setSearchParams(params)
   }
 
+  const totalPages = Math.ceil(products.length / PER_PAGE)
+  const currentProducts = products.slice((page - 1) * PER_PAGE, page * PER_PAGE)
+
+  const goToPage = (p) => {
+    setPage(p)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   return (
     <div className="shop-page">
       <aside className="shop-filter">
@@ -84,24 +94,57 @@ function Shop() {
 
         <h3>Narx (so'm)</h3>
         <form onSubmit={applyPrice} className="price-filter">
-          <input name="min" type="number" placeholder="dan" defaultValue={minPrice} />
-          <input name="max" type="number" placeholder="gacha" defaultValue={maxPrice} />
+          <input name="min" type="number" placeholder="dan" defaultValue={minPrice} min="0" />
+          <input name="max" type="number" placeholder="gacha" defaultValue={maxPrice} min="0" />
           <button type="submit" className="btn-primary full">Filtrlash</button>
         </form>
       </aside>
 
       <div className="shop-products">
         <h2>{category === 'Barchasi' ? 'Barcha mahsulotlar' : category}</h2>
+
         {loading ? (
           <p className="loading">Yuklanmoqda...</p>
         ) : products.length === 0 ? (
           <p className="empty">Mahsulot topilmadi</p>
         ) : (
-          <div className="products-grid">
-            {products.map(product => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
+          <>
+            <div className="products-grid">
+              {currentProducts.map(product => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+
+            {totalPages > 1 && (
+              <div className="pagination">
+                <button
+                  className="pagination-btn"
+                  onClick={() => goToPage(page - 1)}
+                  disabled={page === 1}
+                >
+                  ‹
+                </button>
+
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                  <button
+                    key={p}
+                    className={`pagination-btn ${page === p ? 'active' : ''}`}
+                    onClick={() => goToPage(p)}
+                  >
+                    {p}
+                  </button>
+                ))}
+
+                <button
+                  className="pagination-btn"
+                  onClick={() => goToPage(page + 1)}
+                  disabled={page === totalPages}
+                >
+                  ›
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
