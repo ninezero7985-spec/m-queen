@@ -4,10 +4,11 @@ import '../styles/ProductCard.css'
 
 function ProductCard({ product }) {
   const { addToCart } = useCart()
+  const isOutOfStock = product.stock <= 0
 
   const handleAddToCart = (e) => {
     e.preventDefault()
-    // Variants tizimi
+    if (isOutOfStock) return
     const firstVariant = product.variants?.[0]
     const defaultSize = firstVariant?.size || ''
     const defaultColor = firstVariant?.colors?.[0] || ''
@@ -23,6 +24,9 @@ function ProductCard({ product }) {
         ) : (
           <div className="product-card-no-img">Rasm yo'q</div>
         )}
+        {isOutOfStock && (
+          <div className="out-of-stock-badge">Tez orada keladi</div>
+        )}
       </div>
 
       <div className="product-card-info">
@@ -34,8 +38,12 @@ function ProductCard({ product }) {
             <span className="old-price">{product.old_price.toLocaleString()} so'm</span>
           )}
         </div>
-        <button className="btn-primary full" onClick={handleAddToCart}>
-          Savatga qo'shish
+        <button
+          className={`btn-primary full ${isOutOfStock ? 'btn-disabled' : ''}`}
+          onClick={handleAddToCart}
+          disabled={isOutOfStock}
+        >
+          {isOutOfStock ? '⏳ Tez orada keladi' : "Savatga qo'shish"}
         </button>
       </div>
     </Link>

@@ -14,6 +14,7 @@ function ProductDetail() {
   const [selectedColor, setSelectedColor] = useState('')
   const [activeImg, setActiveImg] = useState(0)
   const [added, setAdded] = useState(false)
+  const isOutOfStock = product ? product.stock <= 0 : false
   const [lightbox, setLightbox] = useState(false)
 
   useEffect(() => {
@@ -154,9 +155,15 @@ function ProductDetail() {
           </div>
         )}
 
-        <button className="btn-primary full" onClick={handleAddToCart}>
-          {added ? "✅ Savatga qo'shildi" : "Savatga qo'shish"}
-        </button>
+        {isOutOfStock ? (
+          <div className="out-of-stock-msg">
+            ⏳ Bu mahsulot vaqtincha tugagan. Tez orada keladi!
+          </div>
+        ) : (
+          <button className="btn-primary full" onClick={handleAddToCart}>
+            {added ? "✅ Savatga qo'shildi" : "Savatga qo'shish"}
+          </button>
+        )}
       </div>
     </div>
   )
