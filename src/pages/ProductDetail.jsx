@@ -3,41 +3,63 @@ import { useParams } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import '../styles/ProductDetail.css'
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+
 function ProductDetail() {
   const { id } = useParams()
-  const { addToCart } = useCart()
+  const { addToCart, toast } = useCart()
   const [product, setProduct] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [selectedSize, setSelectedSize] = useState('')
+  const [selectedVariant, setSelectedVariant] = useState(null)
   const [selectedColor, setSelectedColor] = useState('')
   const [activeImg, setActiveImg] = useState(0)
   const [added, setAdded] = useState(false)
   const [lightbox, setLightbox] = useState(false)
 
   useEffect(() => {
-  const fetchProduct = async () => {
-    const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/products`)
-    const data = await res.json()
-    const found = data.find(p => String(p.id) === String(id))
-    setProduct(found || null)
-    setSelectedSize(found?.sizes?.[0] || '')
-    setSelectedColor(found?.colors?.[0] || '')
-    setLoading(false)
-  }
-  fetchProduct()
-}, [id])
+    const fetchProduct = async () => {
+      const res = await fetch(`${API_URL}/api/products`)
+      const data = await res.json()
+      const found = data.find(p => String(p.id) === String(id))
+      setProduct(found || null)
+      if (found?.variants?.length > 0) {
+        setSelectedVariant(found.variants[0])
+        setSelectedColor(found.variants[0].colors?.[0] || '')
+      }
+      setLoading(false)
+    }
+    fetchProduct()
+  }, [id])
 
-  // ESC bilan yopish
   useEffect(() => {
     const onKey = (e) => { if (e.key === 'Escape') setLightbox(false) }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
-  const handleAddToCart = () => {
-    if (!selectedSize && product.sizes?.length > 0) return alert("O'lchamni tanlang")
-    if (!selectedColor && product.colors?.length > 0) return alert('Rangni tanlang')
-    addToCart(product, selectedSize, selectedColor)
+  const handleSelectVariant = (variant) => {
+    setSelectedVariant(variant)
+    setSelectedColor(variant.colors?.[0] || '')
+  }
+
+  // Joriy narx: asosiy narx + variant qo'shimcha narxi
+  const currentPrice = product ? (product.price + (selectedVariant?.price || 0)) : 0
+
+  const handleAddToCart = async () => {
+    if (!selectedVariant && product.variants?.length > 0) { alert("O'lchamni tanlang"); return }
+    if (!selectedColor && selectedVariant?.colors?.length > 0) { alert('Rangni tanlang'); return }
+
+    // Real vaqtda stock tekshirish
+    const res = await fetch(`${API_URL}/api/products`)
+    const data = await res.json()
+    const fresh = data.find(p => String(p.id) === String(product.id))
+    if (!fresh || fresh.stock <= 0) { alert('Mahsulot tugagan!'); return }
+
+    addToCart(
+      { ...product, price: currentPrice, maxStock: fresh.stock, stock: fresh.stock },
+      selectedVariant?.size || '',
+      selectedColor
+    )
     setAdded(true)
     setTimeout(() => setAdded(false), 2000)
   }
@@ -47,32 +69,20 @@ function ProductDetail() {
 
   return (
     <div className="product-detail">
-      {/* Lightbox */}
       {lightbox && (
         <div className="lightbox-overlay" onClick={() => setLightbox(false)}>
           <button className="lightbox-close" onClick={() => setLightbox(false)}>×</button>
-          <img
-            src={product.images[activeImg]}
-            alt={product.name}
-            onClick={e => e.stopPropagation()}
-          />
+          <img src={product.images[activeImg]} alt={product.name} onClick={e => e.stopPropagation()} />
           {product.images?.length > 1 && (
             <div className="lightbox-thumbs" onClick={e => e.stopPropagation()}>
               {product.images.map((img, i) => (
-                <img
-                  key={i}
-                  src={img}
-                  alt=""
-                  className={activeImg === i ? 'active' : ''}
-                  onClick={() => setActiveImg(i)}
-                />
+                <img key={i} src={img} alt="" className={activeImg === i ? 'active' : ''} onClick={() => setActiveImg(i)} />
               ))}
             </div>
           )}
         </div>
       )}
 
-      {/* Rasmlar */}
       <div className="product-detail-images">
         <div className="product-detail-main-img" onClick={() => setLightbox(true)} style={{ cursor: 'zoom-in' }}>
           {product.images?.[activeImg] ? (
@@ -84,25 +94,18 @@ function ProductDetail() {
         {product.images?.length > 1 && (
           <div className="product-detail-thumbs">
             {product.images.map((img, i) => (
-              <img
-                key={i}
-                src={img}
-                alt=""
-                className={activeImg === i ? 'active' : ''}
-                onClick={() => setActiveImg(i)}
-              />
+              <img key={i} src={img} alt="" className={activeImg === i ? 'active' : ''} onClick={() => setActiveImg(i)} />
             ))}
           </div>
         )}
       </div>
 
-      {/* Info */}
       <div className="product-detail-info">
         <p className="product-card-category">{product.category}</p>
         <h1>{product.name}</h1>
 
         <div className="product-card-price">
-          <span className="price">{product.price.toLocaleString()} so'm</span>
+          <span className="price">{currentPrice?.toLocaleString()} so'm</span>
           {product.old_price && (
             <span className="old-price">{product.old_price.toLocaleString()} so'm</span>
           )}
@@ -110,25 +113,40 @@ function ProductDetail() {
 
         <p className="product-description">{product.description}</p>
 
-        {product.sizes?.length > 0 && (
+        {/* O'lchamlar */}
+        {product.variants?.length > 0 && (
           <div className="selector">
             <p>O'lcham:</p>
             <div className="selector-options">
-              {product.sizes.map(size => (
-                <button key={size} className={selectedSize === size ? 'active' : ''} onClick={() => setSelectedSize(size)}>
-                  {size}
+              {product.variants.map((variant, i) => (
+                <button
+                  key={i}
+                  className={selectedVariant?.size === variant.size ? 'active' : ''}
+                  onClick={() => handleSelectVariant(variant)}
+                >
+                  {variant.size}
+                  {variant.price !== product.price && (
+                    <span style={{ fontSize: '11px', display: 'block', opacity: 0.8 }}>
+                      {variant.price.toLocaleString()}
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
           </div>
         )}
 
-        {product.colors?.length > 0 && (
+        {/* Ranglar */}
+        {selectedVariant?.colors?.length > 0 && (
           <div className="selector">
             <p>Rang:</p>
             <div className="selector-options">
-              {product.colors.map(color => (
-                <button key={color} className={selectedColor === color ? 'active' : ''} onClick={() => setSelectedColor(color)}>
+              {selectedVariant.colors.map(color => (
+                <button
+                  key={color}
+                  className={selectedColor === color ? 'active' : ''}
+                  onClick={() => setSelectedColor(color)}
+                >
                   {color}
                 </button>
               ))}

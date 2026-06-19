@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import '../styles/Checkout.css'
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+
 function Checkout() {
   const navigate = useNavigate()
   const { cart, total, clearCart } = useCart()
@@ -31,32 +33,50 @@ function Checkout() {
 
     const delivery_fee = form.delivery_type === 'delivery' ? 15000 : 0
 
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
-    const res = await fetch(`${API_URL}/api/orders`, {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    full_name: form.full_name,
-    phone: form.phone,
-    delivery_type: form.delivery_type,
-    city: form.delivery_type === 'delivery' ? form.city : null,
-    street: form.delivery_type === 'delivery' ? form.street : null,
-    house: form.delivery_type === 'delivery' ? form.house : null,
-    payment_method: form.payment_method,
-    items: cart,
-    subtotal: total,
-    delivery_fee,
-    total: total + delivery_fee,
-    note: form.note,
-    status: 'new',
-  })
-})
+    // ✅ Real vaqtda stock tekshirish
+    try {
+      const productsRes = await fetch(`${API_URL}/api/products`)
+      const freshProducts = await productsRes.json()
+      for (const item of cart) {
+        const fresh = freshProducts.find(p => String(p.id) === String(item.id))
+        if (!fresh || fresh.stock < item.quantity) {
+          setError(`"${item.name}" mahsulotidan faqat ${fresh?.stock ?? 0} ta qolgan!`)
+          setLoading(false)
+          return
+        }
+      }
+    } catch {
+      setError('Server bilan aloqa yo\'q')
+      setLoading(false)
+      return
+    }
 
-if (!res.ok) {
-  setError('Xatolik yuz berdi, qayta urinib ko\'ring')
-  setLoading(false)
-  return
-}
+    const res = await fetch(`${API_URL}/api/orders`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        full_name: form.full_name,
+        phone: form.phone,
+        delivery_type: form.delivery_type,
+        city: form.delivery_type === 'delivery' ? form.city : null,
+        street: form.delivery_type === 'delivery' ? form.street : null,
+        house: form.delivery_type === 'delivery' ? form.house : null,
+        payment_method: form.payment_method,
+        items: cart,
+        subtotal: total,
+        delivery_fee,
+        total: total + delivery_fee,
+        note: form.note,
+        status: 'new',
+      })
+    })
+
+    if (!res.ok) {
+      const data = await res.json()
+      setError(data.message || 'Xatolik yuz berdi, qayta urinib ko\'ring')
+      setLoading(false)
+      return
+    }
 
     const itemsList = cart
       .map(item => `${item.name} x${item.quantity} — ${(item.price * item.quantity).toLocaleString()} so'm`)
@@ -92,7 +112,6 @@ if (!res.ok) {
       {error && <p className="auth-error">{error}</p>}
 
       <form onSubmit={handleSubmit} className="checkout-form">
-
         <div className="checkout-section">
           <h3>Shaxsiy ma'lumot</h3>
           <div className="form-group">
@@ -117,7 +136,6 @@ if (!res.ok) {
               O'zi olib ketish (bepul)
             </label>
           </div>
-
           {form.delivery_type === 'delivery' && (
             <>
               <div className="form-group">

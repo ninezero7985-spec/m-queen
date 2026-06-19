@@ -9,8 +9,7 @@ const EMPTY_FORM = {
   price: '',
   old_price: '',
   category: '',
-  sizes: [],
-  colors: [],
+  variants: [],
   stock: '',
   is_active: true,
 }
@@ -44,7 +43,6 @@ function Notification({ message, type, onClose }) {
     const t = setTimeout(onClose, 3000)
     return () => clearTimeout(t)
   }, [onClose])
-
   return (
     <div style={{
       position: 'fixed', top: '80px', right: '24px',
@@ -71,27 +69,26 @@ function Products() {
   const [pendingFiles, setPendingFiles] = useState([])
   const [pendingPreviews, setPendingPreviews] = useState([])
   const [uploading, setUploading] = useState(false)
-  const [sizeInput, setSizeInput] = useState('')
-  const [colorInput, setColorInput] = useState('')
   const [notification, setNotification] = useState(null)
   const fileInputRef = useRef(null)
 
+  // Variant inputs
+  const [sizeInput, setSizeInput] = useState('')
+  const [priceInput, setPriceInput] = useState('')
+  const [colorInput, setColorInput] = useState('')
+  const [selectedVariantIdx, setSelectedVariantIdx] = useState(null)
+
   const token = localStorage.getItem('token')
   const authHeaders = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
-
   const showNotif = (message, type = 'success') => setNotification({ message, type })
 
   useEffect(() => {
     fetchProducts()
-    fetch(`${API_URL}/api/categories`)
-      .then(r => r.json())
-      .then(data => setCategories(data))
+    fetch(`${API_URL}/api/categories`).then(r => r.json()).then(data => setCategories(data))
   }, [])
 
   const fetchProducts = async () => {
-    const res = await fetch(`${API_URL}/api/products/all`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
+    const res = await fetch(`${API_URL}/api/products/all`, { headers: { Authorization: `Bearer ${token}` } })
     const data = await res.json()
     setProducts(data)
     setLoading(false)
@@ -102,17 +99,40 @@ function Products() {
     setForm({ ...form, [name]: type === 'checkbox' ? checked : value })
   }
 
-  const addSize = () => {
-    if (sizeInput && !form.sizes.includes(sizeInput)) setForm({ ...form, sizes: [...form.sizes, sizeInput] })
+  // Variant qo'shish
+  const addVariant = () => {
+    if (!sizeInput) return
+    const exists = form.variants.find(v => v.size === sizeInput)
+    if (exists) { showNotif('Bu o\'lcham allaqachon bor', 'error'); return }
+    setForm({
+      ...form,
+      variants: [...form.variants, { size: sizeInput, price: Number(priceInput) || 0, colors: [] }]
+    })
     setSizeInput('')
+    setPriceInput('')
+    setSelectedVariantIdx(form.variants.length)
   }
-  const removeSize = (s) => setForm({ ...form, sizes: form.sizes.filter(x => x !== s) })
 
-  const addColor = () => {
-    if (colorInput && !form.colors.includes(colorInput)) setForm({ ...form, colors: [...form.colors, colorInput] })
+  const removeVariant = (idx) => {
+    setForm({ ...form, variants: form.variants.filter((_, i) => i !== idx) })
+    if (selectedVariantIdx === idx) setSelectedVariantIdx(null)
+  }
+
+  // Tanlangan variant ga rang qo'shish
+  const addColorToVariant = () => {
+    if (selectedVariantIdx === null || !colorInput) return
+    const variants = [...form.variants]
+    if (variants[selectedVariantIdx].colors.includes(colorInput)) return
+    variants[selectedVariantIdx].colors = [...variants[selectedVariantIdx].colors, colorInput]
+    setForm({ ...form, variants })
     setColorInput('')
   }
-  const removeColor = (c) => setForm({ ...form, colors: form.colors.filter(x => x !== c) })
+
+  const removeColorFromVariant = (variantIdx, color) => {
+    const variants = [...form.variants]
+    variants[variantIdx].colors = variants[variantIdx].colors.filter(c => c !== color)
+    setForm({ ...form, variants })
+  }
 
   const totalImages = savedImages.length + pendingFiles.length
 
@@ -133,7 +153,6 @@ function Products() {
   }
 
   const removeSavedImage = (index) => setSavedImages(prev => prev.filter((_, i) => i !== index))
-
   const removePendingImage = (index) => {
     URL.revokeObjectURL(pendingPreviews[index])
     setPendingPreviews(prev => prev.filter((_, i) => i !== index))
@@ -171,14 +190,10 @@ function Products() {
     }
 
     if (editId) {
-      await fetch(`${API_URL}/api/products/${editId}`, {
-        method: 'PUT', headers: authHeaders, body: JSON.stringify(payload)
-      })
+      await fetch(`${API_URL}/api/products/${editId}`, { method: 'PUT', headers: authHeaders, body: JSON.stringify(payload) })
       showNotif('✅ Mahsulot yangilandi')
     } else {
-      await fetch(`${API_URL}/api/products`, {
-        method: 'POST', headers: authHeaders, body: JSON.stringify(payload)
-      })
+      await fetch(`${API_URL}/api/products`, { method: 'POST', headers: authHeaders, body: JSON.stringify(payload) })
       showNotif('✅ Mahsulot qo\'shildi')
     }
 
@@ -195,14 +210,16 @@ function Products() {
     setPendingFiles([])
     setPendingPreviews([])
     setEditId(null)
+    setSelectedVariantIdx(null)
   }
 
   const handleEdit = (product) => {
     setForm({
       name: product.name, description: product.description || '',
       price: product.price, old_price: product.old_price || '',
-      category: product.category, sizes: product.sizes || [],
-      colors: product.colors || [], stock: product.stock, is_active: product.is_active,
+      category: product.category,
+      variants: product.variants || [],
+      stock: product.stock, is_active: product.is_active,
     })
     setSavedImages(product.images || [])
     setPendingFiles([])
@@ -219,9 +236,7 @@ function Products() {
   }
 
   const handleToggleActive = async (id, is_active) => {
-    await fetch(`${API_URL}/api/products/${id}`, {
-      method: 'PUT', headers: authHeaders, body: JSON.stringify({ is_active: !is_active })
-    })
+    await fetch(`${API_URL}/api/products/${id}`, { method: 'PUT', headers: authHeaders, body: JSON.stringify({ is_active: !is_active }) })
     showNotif(is_active ? '🙈 Yashirildi' : '👁️ Ko\'rsatildi')
     fetchProducts()
   }
@@ -230,18 +245,23 @@ function Products() {
 
   return (
     <div className="admin-page">
-      {notification && (
-        <Notification message={notification.message} type={notification.type} onClose={() => setNotification(null)} />
-      )}
+      {notification && <Notification message={notification.message} type={notification.type} onClose={() => setNotification(null)} />}
       <style>{`
         @keyframes slideDown { from { transform: translateY(-10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes spin { to { transform: rotate(360deg); } }
+        .variant-card { border: 1.5px solid var(--gray-2); border-radius: 8px; padding: 12px; margin-bottom: 8px; cursor: pointer; }
+        .variant-card.selected { border-color: var(--primary); background: var(--primary-light); }
+        .variant-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .variant-size { font-weight: 700; font-size: 15px; }
+        .variant-price { color: var(--primary); font-weight: 600; }
+        .variant-colors { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+        .variant-color-tag { background: var(--gray-1); border: 1px solid var(--gray-2); border-radius: 20px; padding: 2px 10px; font-size: 12px; display: flex; align-items: center; gap: 4px; }
       `}</style>
 
       <div className="admin-page-header">
         <h1>Mahsulotlar</h1>
         <button className="btn-primary" onClick={() => {
-          setForm({...EMPTY_FORM, category: categories[0] || ''}); setSavedImages([]); setPendingFiles([]); setPendingPreviews([]); setEditId(null); setShowForm(true)
+          setForm({...EMPTY_FORM, category: categories[0] || ''}); setSavedImages([]); setPendingFiles([]); setPendingPreviews([]); setEditId(null); setSelectedVariantIdx(null); setShowForm(true)
         }}>+ Qo'shish</button>
       </div>
 
@@ -260,12 +280,12 @@ function Products() {
               </div>
               <div className="form-row">
                 <div className="form-group">
-                  <label>Narx (so'm)</label>
-                  <input type="number" name="price" value={form.price} onChange={handleChange} required />
+                  <label>Asosiy narx (so'm)</label>
+                  <input type="number" name="price" value={form.price} onChange={handleChange} required min="0" />
                 </div>
                 <div className="form-group">
                   <label>Eski narx</label>
-                  <input type="number" name="old_price" value={form.old_price} onChange={handleChange} />
+                  <input type="number" name="old_price" value={form.old_price} onChange={handleChange} min="0" />
                 </div>
               </div>
               <div className="form-row">
@@ -277,29 +297,84 @@ function Products() {
                 </div>
                 <div className="form-group">
                   <label>Soni</label>
-                  <input type="number" name="stock" value={form.stock} onChange={handleChange} required />
+                  <input type="number" name="stock" value={form.stock} onChange={handleChange} required min="0" />
                 </div>
               </div>
+
+              {/* O'lcham va narx qo'shish */}
               <div className="form-group">
-                <label>O'lchamlar</label>
-                <div className="tag-input">
-                  <input type="text" value={sizeInput} onChange={e => setSizeInput(e.target.value)} placeholder="S, M, L, XL..." onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addSize())} />
-                  <button type="button" onClick={addSize}>+</button>
+                <label>O'lchamlar va narxlar</label>
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                  <input
+                    type="text"
+                    value={sizeInput}
+                    onChange={e => setSizeInput(e.target.value)}
+                    placeholder="O'lcham (S, M, L...)"
+                    style={{ flex: 1, padding: '8px 12px', border: '1.5px solid var(--gray-2)', borderRadius: '8px' }}
+                    onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addVariant())}
+                  />
+                  <input
+                    type="number"
+                    value={priceInput}
+                    onChange={e => setPriceInput(e.target.value)}
+                    placeholder="Qo'shimcha narx (so'm)"
+                    min="0"
+                    style={{ flex: 1, padding: '8px 12px', border: '1.5px solid var(--gray-2)', borderRadius: '8px' }}
+                    onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addVariant())}
+                  />
+                  <button type="button" className="btn-primary" onClick={addVariant} style={{ padding: '8px 16px' }}>+</button>
                 </div>
-                <div className="tags">
-                  {form.sizes.map(s => <span key={s} className="tag">{s} <button type="button" onClick={() => removeSize(s)}>×</button></span>)}
-                </div>
+
+                {/* Variantlar listi */}
+                {form.variants.map((variant, idx) => (
+                  <div
+                    key={idx}
+                    className={`variant-card ${selectedVariantIdx === idx ? 'selected' : ''}`}
+                    onClick={() => setSelectedVariantIdx(idx)}
+                  >
+                    <div className="variant-card-header">
+                      <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                        <span className="variant-size">{variant.size}</span>
+                        <span className="variant-price">+{variant.price.toLocaleString()} so'm</span>
+                      </div>
+                      <button type="button" onClick={(e) => { e.stopPropagation(); removeVariant(idx) }}
+                        style={{ color: 'var(--danger)', fontWeight: 700, fontSize: '16px' }}>×</button>
+                    </div>
+                    <div className="variant-colors">
+                      {variant.colors.map(color => (
+                        <span key={color} className="variant-color-tag">
+                          {color}
+                          <button type="button" onClick={(e) => { e.stopPropagation(); removeColorFromVariant(idx, color) }}
+                            style={{ color: 'var(--danger)', fontSize: '12px' }}>×</button>
+                        </span>
+                      ))}
+                      {variant.colors.length === 0 && <span style={{ fontSize: '12px', color: 'var(--gray-4)' }}>Rang qo'shing ↓</span>}
+                    </div>
+                  </div>
+                ))}
+
+                {/* Rang qo'shish (tanlangan variantga) */}
+                {selectedVariantIdx !== null && form.variants[selectedVariantIdx] && (
+                  <div style={{ marginTop: '8px', padding: '12px', background: 'var(--gray-1)', borderRadius: '8px' }}>
+                    <p style={{ fontSize: '13px', fontWeight: '600', marginBottom: '8px' }}>
+                      "{form.variants[selectedVariantIdx].size}" uchun rang qo'shish:
+                    </p>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <input
+                        type="text"
+                        value={colorInput}
+                        onChange={e => setColorInput(e.target.value)}
+                        placeholder="Rang nomi (Qizil, Ko'k...)"
+                        style={{ flex: 1, padding: '8px 12px', border: '1.5px solid var(--gray-2)', borderRadius: '8px' }}
+                        onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addColorToVariant())}
+                      />
+                      <button type="button" className="btn-primary" onClick={addColorToVariant} style={{ padding: '8px 16px' }}>+</button>
+                    </div>
+                  </div>
+                )}
               </div>
-              <div className="form-group">
-                <label>Ranglar</label>
-                <div className="tag-input">
-                  <input type="text" value={colorInput} onChange={e => setColorInput(e.target.value)} placeholder="Qizil, Ko'k..." onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addColor())} />
-                  <button type="button" onClick={addColor}>+</button>
-                </div>
-                <div className="tags">
-                  {form.colors.map(c => <span key={c} className="tag">{c} <button type="button" onClick={() => removeColor(c)}>×</button></span>)}
-                </div>
-              </div>
+
+              {/* Rasmlar */}
               <div className="form-group">
                 <label>Rasmlar ({totalImages}/{MAX_IMAGES}) <span style={{color:'var(--danger)'}}>*</span></label>
                 <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleImageSelect} style={{ display: 'none' }} />
@@ -326,6 +401,7 @@ function Products() {
                   {totalImages >= MAX_IMAGES && <p style={{ fontSize: '12px', color: 'var(--danger)', marginTop: '8px' }}>Maksimum 3 ta rasm</p>}
                 </div>
               </div>
+
               <div className="form-group checkbox-group">
                 <label>
                   <input type="checkbox" name="is_active" checked={form.is_active} onChange={handleChange} />

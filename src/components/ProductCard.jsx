@@ -7,9 +7,12 @@ function ProductCard({ product }) {
 
   const handleAddToCart = (e) => {
     e.preventDefault()
-    const defaultSize = product.sizes?.[0] || ''
-    const defaultColor = product.colors?.[0] || ''
-    addToCart(product, defaultSize, defaultColor)
+    // Variants tizimi
+    const firstVariant = product.variants?.[0]
+    const defaultSize = firstVariant?.size || ''
+    const defaultColor = firstVariant?.colors?.[0] || ''
+    const price = product.price + (firstVariant?.price || 0)
+    addToCart({ ...product, price }, defaultSize, defaultColor)
   }
 
   return (
