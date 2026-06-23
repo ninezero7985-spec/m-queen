@@ -151,7 +151,6 @@ function Shop() {
 
       <div className="shop-products">
         <div className="shop-products-head">
-          <h2>{category === 'Barchasi' ? 'Barcha mahsulotlar' : category}</h2>
           <div className="shop-toolbar">
             <div className="shop-search">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

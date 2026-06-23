@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
+import Icon from './Icon'
 import '../styles/ProductCard.css'
 
 function ProductCard({ product }) {
@@ -46,7 +47,9 @@ function ProductCard({ product }) {
           onClick={handleAddToCart}
           disabled={isOutOfStock}
         >
-          {isOutOfStock ? '⏳ Tez orada keladi' : "Savatga qo'shish"}
+          {isOutOfStock
+            ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><Icon name="clock" size={16} /> Tez orada keladi</span>
+            : "Savatga qo'shish"}
         </button>
       </div>
     </Link>

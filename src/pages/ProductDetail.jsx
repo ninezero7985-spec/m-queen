@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
+import Icon from '../components/Icon'
 import '../styles/ProductDetail.css'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
@@ -165,15 +166,19 @@ function ProductDetail() {
 
         {isOutOfStock ? (
           <div className="out-of-stock-msg">
-            ⏳ Bu mahsulot vaqtincha tugagan. Tez orada keladi!
+            <Icon name="clock" size={18} /> Bu mahsulot vaqtincha tugagan. Tez orada keladi!
           </div>
         ) : (
           <>
             {isLowStock && (
-              <p className="low-stock-msg">⚠️ Shoshiling! Faqat {product.stock} ta qoldi</p>
+              <p className="low-stock-msg">
+                <Icon name="alert" size={16} /> Shoshiling! Faqat {product.stock} ta qoldi
+              </p>
             )}
             <button className="btn-primary full" onClick={handleAddToCart}>
-              {added ? "✅ Savatga qo'shildi" : "Savatga qo'shish"}
+              {added
+                ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><Icon name="check" size={16} /> Savatga qo'shildi</span>
+                : "Savatga qo'shish"}
             </button>
           </>
         )}

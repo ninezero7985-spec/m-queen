@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
+import Icon from '../components/Icon'
 import '../styles/Home.css'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
@@ -48,21 +49,21 @@ function Home() {
       {/* Ishonch belgilari */}
       <section className="trust-bar">
         <div className="trust-item">
-          <span className="trust-icon">🚚</span>
+          <span className="trust-icon"><Icon name="truck" size={24} /></span>
           <div className="trust-text">
             <p>Tez yetkazib berish</p>
             <span>1–3 ish kuni ichida</span>
           </div>
         </div>
         <div className="trust-item">
-          <span className="trust-icon">✅</span>
+          <span className="trust-icon"><Icon name="shield" size={24} /></span>
           <div className="trust-text">
             <p>Original mahsulot</p>
             <span>100% sifat kafolati</span>
           </div>
         </div>
         <div className="trust-item">
-          <span className="trust-icon">💬</span>
+          <span className="trust-icon"><Icon name="chat" size={24} /></span>
           <div className="trust-text">
             <p>24/7 qo'llab-quvvatlash</p>
             <span>Har doim aloqadamiz</span>
@@ -86,7 +87,10 @@ function Home() {
       {saleProducts.length > 0 && (
         <section className="sale-products">
           <div className="section-header">
-            <h2>🔥 Chegirmalar</h2>
+            <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ color: '#ff7a00', display: 'inline-flex' }}><Icon name="flame" size={24} /></span>
+              Chegirmalar
+            </h2>
             <Link to="/shop" className="see-all-link">Hammasini ko'rish →</Link>
           </div>
           <div className="products-grid">
