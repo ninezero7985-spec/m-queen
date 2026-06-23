@@ -16,6 +16,7 @@ import AdminOrders from './pages/admin/Orders'
 import AdminCategories from './pages/admin/Categories'
 import Register from './pages/Register'
 import Contact from './pages/Contact'
+import About from './pages/About'
 
 const router = createBrowserRouter([
   {
@@ -31,6 +32,7 @@ const router = createBrowserRouter([
       { path: 'checkout', element: <Checkout /> },
       { path: 'order-success', element: <OrderSuccess /> },
       { path: 'contact', element: <Contact /> },
+      { path: 'about', element: <About /> },
       {
         path: 'admin',
         element: <AdminRoute><AdminLayout /></AdminRoute>,

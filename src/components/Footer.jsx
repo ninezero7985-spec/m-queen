@@ -32,6 +32,8 @@ function Footer() {
           <ul>
             <li><Link to="/">Bosh sahifa</Link></li>
             <li><Link to="/shop">Do'kon</Link></li>
+            <li><Link to="/about">Biz haqimizda</Link></li>
+            <li><Link to="/contact">Kontakt</Link></li>
             <li><Link to="/cart">Savat</Link></li>
           </ul>
         </div>

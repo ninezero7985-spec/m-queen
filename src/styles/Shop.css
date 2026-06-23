@@ -185,3 +185,86 @@
   .pagination { gap: 4px; }
   .pagination-btn { min-width: 36px; height: 36px; font-size: 13px; padding: 0 10px; }
 }
+/* ===== Qidiruv + saralash paneli ===== */
+.shop-products-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.shop-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.shop-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--gray-1);
+  border: 1px solid var(--gray-2);
+  border-radius: var(--radius-xl);
+  padding: 8px 14px;
+  transition: var(--transition);
+}
+.shop-search:focus-within {
+  border-color: var(--primary);
+  background: white;
+}
+.shop-search svg {
+  width: 16px;
+  height: 16px;
+  color: var(--gray-4);
+  flex-shrink: 0;
+}
+.shop-search input {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 14px;
+  font-family: inherit;
+  width: 180px;
+  color: var(--dark);
+}
+.shop-search-clear {
+  font-size: 13px;
+  color: var(--gray-4);
+  width: 18px;
+  height: 18px;
+  line-height: 1;
+  border-radius: 50%;
+}
+.shop-search-clear:hover { color: var(--primary); }
+
+.shop-sort {
+  border: 1px solid var(--gray-2);
+  background: var(--gray-1);
+  border-radius: var(--radius-xl);
+  padding: 9px 16px;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--gray-5);
+  cursor: pointer;
+  outline: none;
+  transition: var(--transition);
+}
+.shop-sort:focus,
+.shop-sort:hover {
+  border-color: var(--primary);
+}
+
+.shop-count {
+  font-size: 13px;
+  color: var(--gray-4);
+  margin-bottom: 16px;
+}
+
+@media (max-width: 600px) {
+  .shop-products-head { flex-direction: column; align-items: stretch; }
+  .shop-toolbar { width: 100%; }
+  .shop-search { flex: 1; }
+  .shop-search input { width: 100%; }
+}

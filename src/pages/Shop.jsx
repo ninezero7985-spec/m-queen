@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
 import '../styles/Shop.css'
@@ -11,6 +11,8 @@ function Shop() {
   const [categories, setCategories] = useState(['Barchasi'])
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
+  const [search, setSearch] = useState('')
+  const [sort, setSort] = useState('default')
   const [searchParams, setSearchParams] = useSearchParams()
 
   const category = searchParams.get('category') || 'Barchasi'
@@ -67,8 +69,22 @@ function Shop() {
     setSearchParams(params)
   }
 
-  const totalPages = Math.ceil(products.length / PER_PAGE)
-  const currentProducts = products.slice((page - 1) * PER_PAGE, page * PER_PAGE)
+  // Qidiruv + saralash (client-side, qo'shimcha so'rovsiz)
+  const visibleProducts = useMemo(() => {
+    let list = [...products]
+    const q = search.trim().toLowerCase()
+    if (q) list = list.filter(p => p.name.toLowerCase().includes(q))
+    if (sort === 'price-asc') list.sort((a, b) => a.price - b.price)
+    else if (sort === 'price-desc') list.sort((a, b) => b.price - a.price)
+    else if (sort === 'new') list.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    return list
+  }, [products, search, sort])
+
+  // Qidiruv yoki saralash o'zgarsa — birinchi sahifaga qaytish
+  useEffect(() => { setPage(1) }, [search, sort])
+
+  const totalPages = Math.ceil(visibleProducts.length / PER_PAGE)
+  const currentProducts = visibleProducts.slice((page - 1) * PER_PAGE, page * PER_PAGE)
 
   const goToPage = (p) => {
     setPage(p)
@@ -101,14 +117,40 @@ function Shop() {
       </aside>
 
       <div className="shop-products">
-        <h2>{category === 'Barchasi' ? 'Barcha mahsulotlar' : category}</h2>
+        <div className="shop-products-head">
+          <h2>{category === 'Barchasi' ? 'Barcha mahsulotlar' : category}</h2>
+          <div className="shop-toolbar">
+            <div className="shop-search">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              <input
+                type="text"
+                placeholder="Mahsulot qidirish..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+              {search && (
+                <button className="shop-search-clear" onClick={() => setSearch('')} aria-label="Tozalash">✕</button>
+              )}
+            </div>
+            <select className="shop-sort" value={sort} onChange={(e) => setSort(e.target.value)}>
+              <option value="default">Saralash</option>
+              <option value="price-asc">Arzondan qimmatga</option>
+              <option value="price-desc">Qimmatdan arzonga</option>
+              <option value="new">Yangi qo'shilganlar</option>
+            </select>
+          </div>
+        </div>
 
         {loading ? (
           <p className="loading">Yuklanmoqda...</p>
-        ) : products.length === 0 ? (
+        ) : visibleProducts.length === 0 ? (
           <p className="empty">Mahsulot topilmadi</p>
         ) : (
           <>
+            <p className="shop-count">{visibleProducts.length} ta mahsulot</p>
             <div className="products-grid">
               {currentProducts.map(product => (
                 <ProductCard key={product.id} product={product} />

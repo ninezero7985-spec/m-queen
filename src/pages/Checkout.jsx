@@ -23,12 +23,30 @@ function Checkout() {
   })
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value })
+    const { name, value } = e.target
+
+    // Telefon: faqat raqam va boshida + ruxsat (harf yozib bo'lmaydi)
+    if (name === 'phone') {
+      let cleaned = value.replace(/[^\d+]/g, '')   // raqam va + dan boshqasini o'chirish
+      cleaned = cleaned.replace(/(?!^)\+/g, '')      // + faqat eng boshida bo'lsin
+      setForm({ ...form, phone: cleaned })
+      return
+    }
+
+    setForm({ ...form, [name]: value })
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
+
+    // Telefon tekshirish: kamida 9 ta raqam bo'lsin
+    const phoneDigits = form.phone.replace(/\D/g, '')
+    if (phoneDigits.length < 9) {
+      setError("Telefon raqamini to'g'ri kiriting (kamida 9 ta raqam)")
+      return
+    }
+
     setLoading(true)
 
     const delivery_fee = form.delivery_type === 'delivery' ? 15000 : 0
@@ -120,7 +138,7 @@ function Checkout() {
           </div>
           <div className="form-group">
             <label>Telefon</label>
-            <input type="tel" name="phone" value={form.phone} onChange={handleChange} placeholder="+998901234567" required />
+            <input type="tel" name="phone" value={form.phone} onChange={handleChange} placeholder="+998901234567" inputMode="tel" required />
           </div>
         </div>
 
