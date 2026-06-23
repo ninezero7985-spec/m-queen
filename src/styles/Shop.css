@@ -268,3 +268,37 @@
   .shop-search { flex: 1; }
   .shop-search input { width: 100%; }
 }
+
+/* ===== Narx oraliqlari (tap chip) ===== */
+.shop-filter .price-ranges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  list-style: none;
+}
+.shop-filter .price-ranges li { margin: 0; }
+.shop-filter .price-ranges li button {
+  width: auto;
+  text-align: center;
+  padding: 8px 14px;
+  border: 1px solid var(--gray-2);
+  border-radius: var(--radius-xl);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--gray-5);
+  background: white;
+  transition: var(--transition);
+}
+.shop-filter .price-ranges li button::before { display: none; }
+.shop-filter .price-ranges li button:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: white;
+  padding-left: 14px;
+}
+.shop-filter .price-ranges li button.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+  padding-left: 14px;
+}

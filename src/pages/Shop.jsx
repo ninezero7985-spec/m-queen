@@ -6,6 +6,15 @@ import '../styles/Shop.css'
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 const PER_PAGE = 6
 
+// Tayyor narx oraliqlari (mijoz yozmasdan tanlaydi)
+const PRICE_RANGES = [
+  { label: 'Hammasi', min: '', max: '' },
+  { label: '500 ming gacha', min: '', max: '500000' },
+  { label: '500 ming – 1 mln', min: '500000', max: '1000000' },
+  { label: '1 – 1.5 mln', min: '1000000', max: '1500000' },
+  { label: '1.5 mln dan yuqori', min: '1500000', max: '' },
+]
+
 function Shop() {
   const [products, setProducts] = useState([])
   const [categories, setCategories] = useState(['Barchasi'])
@@ -58,14 +67,11 @@ function Shop() {
     setSearchParams(params)
   }
 
-  const applyPrice = (e) => {
-    e.preventDefault()
+  const setPriceRange = (range) => {
     const params = {}
     if (category !== 'Barchasi') params.category = category
-    const min = e.target.min.value
-    const max = e.target.max.value
-    if (min) params.min = min
-    if (max) params.max = max
+    if (range.min) params.min = range.min
+    if (range.max) params.max = range.max
     setSearchParams(params)
   }
 
@@ -109,11 +115,18 @@ function Shop() {
         </ul>
 
         <h3>Narx (so'm)</h3>
-        <form onSubmit={applyPrice} className="price-filter">
-          <input name="min" type="number" placeholder="dan" defaultValue={minPrice} min="0" />
-          <input name="max" type="number" placeholder="gacha" defaultValue={maxPrice} min="0" />
-          <button type="submit" className="btn-primary full">Filtrlash</button>
-        </form>
+        <ul className="price-ranges">
+          {PRICE_RANGES.map(r => (
+            <li key={r.label}>
+              <button
+                className={minPrice === r.min && maxPrice === r.max ? 'active' : ''}
+                onClick={() => setPriceRange(r)}
+              >
+                {r.label}
+              </button>
+            </li>
+          ))}
+        </ul>
       </aside>
 
       <div className="shop-products">
