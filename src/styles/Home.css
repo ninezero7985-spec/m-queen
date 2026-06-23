@@ -113,15 +113,15 @@
   position: relative;
   overflow: hidden;
   z-index: 0;
-  background: var(--gray-1);
+  background: linear-gradient(135deg, var(--primary-light), #ffffff);
   padding: 26px 16px;
   border-radius: var(--radius-lg);
   font-weight: 700;
   font-size: 14px;
   transition: transform 0.3s ease, box-shadow 0.3s ease, color 0.3s ease;
   text-align: center;
-  border: 1.5px solid transparent;
-  color: var(--gray-5);
+  border: 1.5px solid rgba(233, 30, 140, 0.2);
+  color: var(--primary-dark);
   letter-spacing: 0.2px;
 }
 .category-card::before {
