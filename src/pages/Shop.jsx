@@ -4,7 +4,6 @@ import ProductCard from '../components/ProductCard'
 import '../styles/Shop.css'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
-const PER_PAGE = 6
 const STEP = 50000
 const MAX_PRICE = 30000000
 
@@ -17,6 +16,7 @@ function Shop() {
   const [sort, setSort] = useState('default')
   const [priceMin, setPriceMin] = useState(0)
   const [priceMax, setPriceMax] = useState(MAX_PRICE)
+  const [perPage, setPerPage] = useState(typeof window !== 'undefined' && window.innerWidth > 1024 ? 8 : 6)
   const [searchParams, setSearchParams] = useSearchParams()
 
   const category = searchParams.get('category') || 'Barchasi'
@@ -49,12 +49,13 @@ function Shop() {
     fetchProducts()
   }, [])
 
-  const bounds = useMemo(() => {
-    if (!allProducts.length) return { min: 0, max: MAX_PRICE }
-    const prices = allProducts.map(p => p.price)
-    const lo = Math.floor(Math.min(...prices) / STEP) * STEP
-    return { min: lo, max: MAX_PRICE }
-  }, [allProducts])
+  useEffect(() => {
+    const onResize = () => setPerPage(window.innerWidth > 1024 ? 8 : 6)
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
+
+  const bounds = useMemo(() => ({ min: 0, max: MAX_PRICE }), [])
 
   useEffect(() => {
     setPriceMin(bounds.min)
@@ -78,7 +79,7 @@ function Shop() {
     return list
   }, [filtered, search, sort])
 
-  useEffect(() => { setPage(1) }, [category, priceMin, priceMax, search, sort])
+  useEffect(() => { setPage(1) }, [category, priceMin, priceMax, search, sort, perPage])
 
   const setCategory = (cat) => {
     const params = {}
@@ -90,8 +91,8 @@ function Shop() {
   const onMinChange = (e) => setPriceMin(Math.min(Number(e.target.value), priceMax - STEP))
   const onMaxChange = (e) => setPriceMax(Math.max(Number(e.target.value), priceMin + STEP))
 
-  const totalPages = Math.ceil(visibleProducts.length / PER_PAGE)
-  const currentProducts = visibleProducts.slice((page - 1) * PER_PAGE, page * PER_PAGE)
+  const totalPages = Math.ceil(visibleProducts.length / perPage)
+  const currentProducts = visibleProducts.slice((page - 1) * perPage, page * perPage)
 
   const goToPage = (p) => {
     setPage(p)

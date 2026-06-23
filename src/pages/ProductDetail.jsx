@@ -15,6 +15,7 @@ function ProductDetail() {
   const [activeImg, setActiveImg] = useState(0)
   const [added, setAdded] = useState(false)
   const isOutOfStock = product ? product.stock <= 0 : false
+  const isLowStock = product ? (product.stock > 0 && product.stock < 10) : false
   const [lightbox, setLightbox] = useState(false)
 
   useEffect(() => {
@@ -167,9 +168,14 @@ function ProductDetail() {
             ⏳ Bu mahsulot vaqtincha tugagan. Tez orada keladi!
           </div>
         ) : (
-          <button className="btn-primary full" onClick={handleAddToCart}>
-            {added ? "✅ Savatga qo'shildi" : "Savatga qo'shish"}
-          </button>
+          <>
+            {isLowStock && (
+              <p className="low-stock-msg">⚠️ Shoshiling! Faqat {product.stock} ta qoldi</p>
+            )}
+            <button className="btn-primary full" onClick={handleAddToCart}>
+              {added ? "✅ Savatga qo'shildi" : "Savatga qo'shish"}
+            </button>
+          </>
         )}
       </div>
     </div>

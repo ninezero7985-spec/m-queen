@@ -7,6 +7,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 
 function Home() {
   const [newProducts, setNewProducts] = useState([])
+  const [saleProducts, setSaleProducts] = useState([])
   const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -19,7 +20,9 @@ function Home() {
       const products = await productsRes.json()
       const cats = await categoriesRes.json()
 
-      setNewProducts(products.filter(p => p.is_active).slice(0, 8))
+      const active = products.filter(p => p.is_active)
+      setNewProducts(active.slice(0, 8))
+      setSaleProducts(active.filter(p => p.old_price && p.old_price > p.price).slice(0, 8))
       setCategories(cats)
       setLoading(false)
     }
@@ -31,9 +34,39 @@ function Home() {
       {/* Hero */}
       <section className="hero">
         <div className="hero-content">
+          <span className="hero-eyebrow">Yangi 2026 kolleksiyasi</span>
           <h1>Ayollar kiyimi</h1>
           <p>Eng yangi kolleksiyalar — faqat siz uchun</p>
-          <Link to="/shop" className="btn-primary">Do'konga o'tish</Link>
+          <div className="hero-actions">
+            <Link to="/shop" className="btn-primary">Do'konga o'tish</Link>
+            <Link to="/about" className="btn-hero-ghost">Biz haqimizda</Link>
+          </div>
+        </div>
+        <div className="hero-line" />
+      </section>
+
+      {/* Ishonch belgilari */}
+      <section className="trust-bar">
+        <div className="trust-item">
+          <span className="trust-icon">🚚</span>
+          <div className="trust-text">
+            <p>Tez yetkazib berish</p>
+            <span>1–3 ish kuni ichida</span>
+          </div>
+        </div>
+        <div className="trust-item">
+          <span className="trust-icon">✅</span>
+          <div className="trust-text">
+            <p>Original mahsulot</p>
+            <span>100% sifat kafolati</span>
+          </div>
+        </div>
+        <div className="trust-item">
+          <span className="trust-icon">💬</span>
+          <div className="trust-text">
+            <p>24/7 qo'llab-quvvatlash</p>
+            <span>Har doim aloqadamiz</span>
+          </div>
         </div>
       </section>
 
@@ -49,9 +82,27 @@ function Home() {
         </div>
       </section>
 
+      {/* Chegirmalar */}
+      {saleProducts.length > 0 && (
+        <section className="sale-products">
+          <div className="section-header">
+            <h2>🔥 Chegirmalar</h2>
+            <Link to="/shop" className="see-all-link">Hammasini ko'rish →</Link>
+          </div>
+          <div className="products-grid">
+            {saleProducts.map(product => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Yangi mahsulotlar */}
       <section className="new-products">
-        <h2>Yangi kelganlar</h2>
+        <div className="section-header">
+          <h2>Yangi kelganlar</h2>
+          <Link to="/shop" className="see-all-link">Hammasini ko'rish →</Link>
+        </div>
         {loading ? (
           <p className="loading">Yuklanmoqda...</p>
         ) : (

@@ -191,3 +191,15 @@
   border-color: var(--primary);
   box-shadow: 0 0 12px rgba(233,30,140,0.4);
 }
+/* Kam qoldi ogohlantirishi (mahsulot sahifasi) */
+.low-stock-msg {
+  display: inline-block;
+  background: #fff4e5;
+  color: #b35900;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 9px 16px;
+  border-radius: 10px;
+  margin-bottom: 14px;
+  border: 1px solid #ffd9a8;
+}

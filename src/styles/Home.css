@@ -204,3 +204,108 @@
   .hero-content h1 { font-size: 30px; }
   .categories-grid { grid-template-columns: repeat(2, 1fr); }
 }
+/* ===== HERO qo'shimchalari (eyebrow + tugmalar) ===== */
+.hero-eyebrow {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #ffb3e0;
+  background: rgba(233, 30, 140, 0.15);
+  border: 1px solid rgba(233, 30, 140, 0.35);
+  padding: 6px 16px;
+  border-radius: 999px;
+  margin-bottom: 22px;
+  animation: fadeInUp 0.8s ease;
+}
+.hero-actions {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.btn-hero-ghost {
+  display: inline-block;
+  padding: 15px 34px;
+  border-radius: var(--radius);
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
+  color: white;
+  font-size: 15px;
+  font-weight: 600;
+  transition: var(--transition);
+  animation: fadeInUp 0.8s ease 0.4s both;
+}
+.btn-hero-ghost:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: white;
+}
+
+/* ===== Ishonch belgilari ===== */
+.trust-bar {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 36px 48px;
+  border-bottom: 1px solid var(--gray-2);
+}
+.trust-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  justify-content: center;
+}
+.trust-icon {
+  font-size: 24px;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--primary-light);
+  border-radius: var(--radius);
+  flex-shrink: 0;
+}
+.trust-text p {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--dark);
+  margin: 0;
+}
+.trust-text span {
+  font-size: 12px;
+  color: var(--gray-4);
+}
+
+/* ===== Chegirmalar bo'limi ===== */
+.sale-products {
+  padding: 60px 48px 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+.sale-products .section-header {
+  margin-bottom: 32px;
+}
+.see-all-link {
+  font-size: 14px;
+  color: var(--primary);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.see-all-link:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+  .trust-bar {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 24px 16px;
+  }
+  .trust-item { justify-content: flex-start; }
+  .hero-actions { flex-direction: column; align-items: center; }
+  .btn-hero-ghost { width: 100%; max-width: 280px; text-align: center; }
+  .sale-products { padding: 40px 16px 16px; }
+}

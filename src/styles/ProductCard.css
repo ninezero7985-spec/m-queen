@@ -182,3 +182,18 @@
   .product-card-info h3 { font-size: 13px; }
   .price { font-size: 15px; }
 }
+/* Kam qoldi belgisi (kartochkada) */
+.low-stock-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: #ff7a00;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  z-index: 2;
+  letter-spacing: 0.2px;
+  box-shadow: 0 2px 8px rgba(255, 122, 0, 0.35);
+}

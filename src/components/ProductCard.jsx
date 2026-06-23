@@ -5,6 +5,7 @@ import '../styles/ProductCard.css'
 function ProductCard({ product }) {
   const { addToCart } = useCart()
   const isOutOfStock = product.stock <= 0
+  const isLowStock = product.stock > 0 && product.stock < 10
 
   const handleAddToCart = (e) => {
     e.preventDefault()
@@ -24,9 +25,11 @@ function ProductCard({ product }) {
         ) : (
           <div className="product-card-no-img">Rasm yo'q</div>
         )}
-        {isOutOfStock && (
+        {isOutOfStock ? (
           <div className="out-of-stock-badge">Tez orada keladi</div>
-        )}
+        ) : isLowStock ? (
+          <div className="low-stock-badge">Faqat {product.stock} ta</div>
+        ) : null}
       </div>
 
       <div className="product-card-info">
