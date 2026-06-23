@@ -5,28 +5,21 @@ import '../styles/Shop.css'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 const PER_PAGE = 6
-
-// Tayyor narx oraliqlari (mijoz yozmasdan tanlaydi)
-const PRICE_RANGES = [
-  { label: 'Hammasi', min: '', max: '' },
-  { label: '500 ming gacha', min: '', max: '500000' },
-  { label: '500 ming – 1 mln', min: '500000', max: '1000000' },
-  { label: '1 – 1.5 mln', min: '1000000', max: '1500000' },
-  { label: '1.5 mln dan yuqori', min: '1500000', max: '' },
-]
+const STEP = 50000
+const MAX_PRICE = 30000000
 
 function Shop() {
-  const [products, setProducts] = useState([])
+  const [allProducts, setAllProducts] = useState([])
   const [categories, setCategories] = useState(['Barchasi'])
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState('default')
+  const [priceMin, setPriceMin] = useState(0)
+  const [priceMax, setPriceMax] = useState(MAX_PRICE)
   const [searchParams, setSearchParams] = useSearchParams()
 
   const category = searchParams.get('category') || 'Barchasi'
-  const minPrice = searchParams.get('min') || ''
-  const maxPrice = searchParams.get('max') || ''
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -44,50 +37,58 @@ function Shop() {
   useEffect(() => {
     const fetchProducts = async () => {
       setLoading(true)
-      setPage(1)
-      const res = await fetch(`${API_URL}/api/products`)
-      const data = await res.json()
-
-      let filtered = data.filter(p => p.is_active)
-      if (category !== 'Barchasi') filtered = filtered.filter(p => p.category === category)
-      if (minPrice) filtered = filtered.filter(p => p.price >= Number(minPrice))
-      if (maxPrice) filtered = filtered.filter(p => p.price <= Number(maxPrice))
-
-      setProducts(filtered)
+      try {
+        const res = await fetch(`${API_URL}/api/products`)
+        const data = await res.json()
+        setAllProducts(data.filter(p => p.is_active))
+      } catch {
+        setAllProducts([])
+      }
       setLoading(false)
     }
     fetchProducts()
-  }, [category, minPrice, maxPrice])
+  }, [])
 
-  const setCategory = (cat) => {
-    const params = {}
-    if (cat !== 'Barchasi') params.category = cat
-    if (minPrice) params.min = minPrice
-    if (maxPrice) params.max = maxPrice
-    setSearchParams(params)
-  }
+  const bounds = useMemo(() => {
+    if (!allProducts.length) return { min: 0, max: MAX_PRICE }
+    const prices = allProducts.map(p => p.price)
+    const lo = Math.floor(Math.min(...prices) / STEP) * STEP
+    return { min: lo, max: MAX_PRICE }
+  }, [allProducts])
 
-  const setPriceRange = (range) => {
-    const params = {}
-    if (category !== 'Barchasi') params.category = category
-    if (range.min) params.min = range.min
-    if (range.max) params.max = range.max
-    setSearchParams(params)
-  }
+  useEffect(() => {
+    setPriceMin(bounds.min)
+    setPriceMax(bounds.max)
+  }, [bounds.min, bounds.max])
 
-  // Qidiruv + saralash (client-side, qo'shimcha so'rovsiz)
+  const filtered = useMemo(() => {
+    let list = allProducts
+    if (category !== 'Barchasi') list = list.filter(p => p.category === category)
+    list = list.filter(p => p.price >= priceMin && p.price <= priceMax)
+    return list
+  }, [allProducts, category, priceMin, priceMax])
+
   const visibleProducts = useMemo(() => {
-    let list = [...products]
+    let list = [...filtered]
     const q = search.trim().toLowerCase()
     if (q) list = list.filter(p => p.name.toLowerCase().includes(q))
     if (sort === 'price-asc') list.sort((a, b) => a.price - b.price)
     else if (sort === 'price-desc') list.sort((a, b) => b.price - a.price)
     else if (sort === 'new') list.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
     return list
-  }, [products, search, sort])
+  }, [filtered, search, sort])
 
-  // Qidiruv yoki saralash o'zgarsa — birinchi sahifaga qaytish
-  useEffect(() => { setPage(1) }, [search, sort])
+  useEffect(() => { setPage(1) }, [category, priceMin, priceMax, search, sort])
+
+  const setCategory = (cat) => {
+    const params = {}
+    if (cat !== 'Barchasi') params.category = cat
+    setSearchParams(params)
+  }
+
+  const pct = (v) => bounds.max === bounds.min ? 0 : ((v - bounds.min) / (bounds.max - bounds.min)) * 100
+  const onMinChange = (e) => setPriceMin(Math.min(Number(e.target.value), priceMax - STEP))
+  const onMaxChange = (e) => setPriceMax(Math.max(Number(e.target.value), priceMin + STEP))
 
   const totalPages = Math.ceil(visibleProducts.length / PER_PAGE)
   const currentProducts = visibleProducts.slice((page - 1) * PER_PAGE, page * PER_PAGE)
@@ -115,18 +116,36 @@ function Shop() {
         </ul>
 
         <h3>Narx (so'm)</h3>
-        <ul className="price-ranges">
-          {PRICE_RANGES.map(r => (
-            <li key={r.label}>
-              <button
-                className={minPrice === r.min && maxPrice === r.max ? 'active' : ''}
-                onClick={() => setPriceRange(r)}
-              >
-                {r.label}
-              </button>
-            </li>
-          ))}
-        </ul>
+        <div className="price-slider">
+          <div className="price-slider-track">
+            <div
+              className="price-slider-fill"
+              style={{ left: pct(priceMin) + '%', right: (100 - pct(priceMax)) + '%' }}
+            />
+          </div>
+          <input
+            type="range"
+            min={bounds.min}
+            max={bounds.max}
+            step={STEP}
+            value={priceMin}
+            onChange={onMinChange}
+            aria-label="Eng past narx"
+          />
+          <input
+            type="range"
+            min={bounds.min}
+            max={bounds.max}
+            step={STEP}
+            value={priceMax}
+            onChange={onMaxChange}
+            aria-label="Eng yuqori narx"
+          />
+        </div>
+        <div className="price-slider-values">
+          <span>{priceMin.toLocaleString()}</span>
+          <span>{priceMax.toLocaleString()}</span>
+        </div>
       </aside>
 
       <div className="shop-products">
