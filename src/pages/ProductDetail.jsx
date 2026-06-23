@@ -19,13 +19,23 @@ function ProductDetail() {
 
   useEffect(() => {
     const fetchProduct = async () => {
-      const res = await fetch(`${API_URL}/api/products`)
-      const data = await res.json()
-      const found = data.find(p => String(p.id) === String(id))
-      setProduct(found || null)
-      if (found?.variants?.length > 0) {
-        setSelectedVariant(found.variants[0])
-        setSelectedColor(found.variants[0].colors?.[0] || '')
+      setLoading(true)
+      try {
+        // Faqat BITTA mahsulotni so'raymiz (butun ro'yxatni emas)
+        const res = await fetch(`${API_URL}/api/products/${id}`)
+        if (!res.ok) {
+          setProduct(null)
+          setLoading(false)
+          return
+        }
+        const found = await res.json()
+        setProduct(found)
+        if (found?.variants?.length > 0) {
+          setSelectedVariant(found.variants[0])
+          setSelectedColor(found.variants[0].colors?.[0] || '')
+        }
+      } catch {
+        setProduct(null)
       }
       setLoading(false)
     }
@@ -50,19 +60,16 @@ function ProductDetail() {
     if (!selectedVariant && product.variants?.length > 0) { alert("O'lchamni tanlang"); return }
     if (!selectedColor && selectedVariant?.colors?.length > 0) { alert('Rangni tanlang'); return }
 
-    // Real vaqtda stock tekshirish
-    const res = await fetch(`${API_URL}/api/products`)
-    const data = await res.json()
-    const fresh = data.find(p => String(p.id) === String(product.id))
-    if (!fresh || fresh.stock <= 0) { alert('Mahsulot tugagan!'); return }
-
-    addToCart(
-      { ...product, price: currentPrice, maxStock: fresh.stock, stock: fresh.stock },
+    // Stock tekshirish endi CartContext ichida (bitta so'rov bilan) bajariladi
+    const ok = await addToCart(
+      { ...product, price: currentPrice },
       selectedVariant?.size || '',
       selectedColor
     )
-    setAdded(true)
-    setTimeout(() => setAdded(false), 2000)
+    if (ok) {
+      setAdded(true)
+      setTimeout(() => setAdded(false), 2000)
+    }
   }
 
   if (loading) return <p className="loading">Yuklanmoqda...</p>

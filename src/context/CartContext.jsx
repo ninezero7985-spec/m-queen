@@ -19,52 +19,50 @@ export function CartProvider({ children }) {
     setTimeout(() => setToast(null), 3000)
   }
 
-  const addToCart = async (product, size, color) => {
-    // Backenddan fresh stock olish
+  // Bitta mahsulotning yangi stock'ini olish (butun ro'yxatni emas)
+  const fetchStock = async (productId) => {
     try {
-      const res = await fetch(`${API_URL}/api/products`)
-      const products = await res.json()
-      const fresh = products.find(p => String(p.id) === String(product.id))
-      const freshStock = fresh?.stock ?? 0
-
-      if (freshStock <= 0) {
-        showToast('Mahsulot tugagan!')
-        return
-      }
-
-      setCart(prev => {
-        const existing = prev.find(
-          item => item.id === product.id && item.size === size && item.color === color
-        )
-        if (existing) {
-          if (existing.quantity >= freshStock) {
-            showToast(`Maksimal miqdor: ${freshStock} ta`)
-            return prev
-          }
-          return prev.map(item =>
-            item.id === product.id && item.size === size && item.color === color
-              ? { ...item, quantity: item.quantity + 1, stock: freshStock }
-              : item
-          )
-        }
-        return [...prev, { ...product, size, color, quantity: 1, stock: freshStock }]
-      })
+      const res = await fetch(`${API_URL}/api/products/${productId}`)
+      if (!res.ok) return null
+      const fresh = await res.json()
+      return fresh?.stock ?? 0
     } catch {
-      // Internet yo'q bo'lsa ham qo'shsin
-      setCart(prev => {
-        const existing = prev.find(
-          item => item.id === product.id && item.size === size && item.color === color
-        )
-        if (existing) {
-          return prev.map(item =>
-            item.id === product.id && item.size === size && item.color === color
-              ? { ...item, quantity: item.quantity + 1 }
-              : item
-          )
-        }
-        return [...prev, { ...product, size, color, quantity: 1 }]
-      })
+      return null // internet yo'q
     }
+  }
+
+  // true qaytarsa — qo'shildi, false — qo'shilmadi
+  const addToCart = async (product, size, color) => {
+    const freshStock = await fetchStock(product.id)
+
+    // Internet bor va mahsulot tugagan
+    if (freshStock !== null && freshStock <= 0) {
+      showToast('Mahsulot tugagan!')
+      return false
+    }
+
+    const existing = cart.find(
+      item => item.id === product.id && item.size === size && item.color === color
+    )
+    if (existing && freshStock !== null && existing.quantity >= freshStock) {
+      showToast(`Maksimal miqdor: ${freshStock} ta`)
+      return false
+    }
+
+    setCart(prev => {
+      const ex = prev.find(
+        item => item.id === product.id && item.size === size && item.color === color
+      )
+      if (ex) {
+        return prev.map(item =>
+          item.id === product.id && item.size === size && item.color === color
+            ? { ...item, quantity: item.quantity + 1, ...(freshStock !== null ? { stock: freshStock } : {}) }
+            : item
+        )
+      }
+      return [...prev, { ...product, size, color, quantity: 1, ...(freshStock !== null ? { stock: freshStock } : {}) }]
+    })
+    return true
   }
 
   const removeFromCart = (id, size, color) => {
@@ -76,19 +74,11 @@ export function CartProvider({ children }) {
   const updateQuantity = async (id, size, color, quantity) => {
     if (quantity < 1) return removeFromCart(id, size, color)
 
-    // Fresh stock tekshirish
-    try {
-      const res = await fetch(`${API_URL}/api/products`)
-      const products = await res.json()
-      const fresh = products.find(p => String(p.id) === String(id))
-      const freshStock = fresh?.stock ?? 999
-
-      if (quantity > freshStock) {
-        showToast(`Maksimal miqdor: ${freshStock} ta`)
-        return
-      }
-    } catch {
-      // ignore
+    // Bitta mahsulotning fresh stock'ini tekshirish
+    const freshStock = await fetchStock(id)
+    if (freshStock !== null && quantity > freshStock) {
+      showToast(`Maksimal miqdor: ${freshStock} ta`)
+      return
     }
 
     setCart(prev => prev.map(item =>
