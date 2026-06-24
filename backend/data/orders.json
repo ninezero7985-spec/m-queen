@@ -50,8 +50,8 @@
     "delivery_fee": 0,
     "total": 2080000,
     "note": "",
-    "status": "new",
-    "stock_deducted": false,
+    "status": "confirmed",
+    "stock_deducted": true,
     "created_at": "2026-06-24T09:24:49.814Z"
   },
   {
