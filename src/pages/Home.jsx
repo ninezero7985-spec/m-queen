@@ -100,7 +100,7 @@ function Home() {
           <div className="sale-carousel">
             <div
               className="sale-track"
-              style={{ animationDuration: `${baseSale.length * 5}s` }}
+              style={{ animationDuration: `${baseSale.length * 7}s` }}
             >
               {[...baseSale, ...baseSale].map((product, i) => (
                 <div className="sale-slide" key={i}>
