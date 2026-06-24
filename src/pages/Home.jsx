@@ -30,6 +30,10 @@ function Home() {
     fetchData()
   }, [])
 
+  const baseSale = saleProducts.length
+    ? Array.from({ length: Math.max(6, saleProducts.length) }, (_, i) => saleProducts[i % saleProducts.length])
+    : []
+
   return (
     <div className="home">
       {/* Hero */}
@@ -93,10 +97,17 @@ function Home() {
             </h2>
             <Link to="/shop" className="see-all-link">Hammasini ko'rish →</Link>
           </div>
-          <div className="products-grid">
-            {saleProducts.map(product => (
-              <ProductCard key={product.id} product={product} />
-            ))}
+          <div className="sale-carousel">
+            <div
+              className="sale-track"
+              style={{ animationDuration: `${baseSale.length * 5}s` }}
+            >
+              {[...baseSale, ...baseSale].map((product, i) => (
+                <div className="sale-slide" key={i}>
+                  <ProductCard product={product} />
+                </div>
+              ))}
+            </div>
           </div>
         </section>
       )}

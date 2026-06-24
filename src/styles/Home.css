@@ -311,3 +311,32 @@
 
 /* Ikonka ranggi (trust belgilarida) */
 .trust-icon { color: var(--primary); }
+
+/* ===== Chegirmalar — avtomatik aylanuvchi karusel ===== */
+.sale-carousel {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+}
+.sale-track {
+  display: flex;
+  width: max-content;
+  animation-name: saleScroll;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+.sale-carousel:hover .sale-track {
+  animation-play-state: paused;
+}
+.sale-slide {
+  width: 260px;
+  margin-right: 20px;
+  flex-shrink: 0;
+}
+@keyframes saleScroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@media (max-width: 600px) {
+  .sale-slide { width: 200px; margin-right: 12px; }
+}
