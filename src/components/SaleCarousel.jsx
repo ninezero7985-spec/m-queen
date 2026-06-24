@@ -3,44 +3,45 @@ import ProductCard from './ProductCard'
 
 function SaleCarousel({ products }) {
   const ref = useRef(null)
-  const paused = useRef(false)
-  const drag = useRef({ active: false, startX: 0, startScroll: 0, moved: false })
+  const paused = useRef(false)   // faqat barmoq bilan surganda
+  const drag = useRef({ active: false, captured: false, startX: 0, startScroll: 0, moved: false, pointerId: null })
+  const posRef = useRef(0)
 
-  // Mahsulotlarni ko'paytiramiz (uzluksiz aylanish uchun) — 3 nusxa
+  // Uzluksiz aylanish uchun 3 nusxa
   const base = products.length
     ? Array.from({ length: Math.max(6, products.length) }, (_, i) => products[i % products.length])
     : []
   const list = base.length ? [...base, ...base, ...base] : []
 
-  // Chekkaga yetganda sezilmasdan o'rtaga qaytarish (uzluksiz his)
-  const wrap = (el) => {
-    const set = el.scrollWidth / 3
-    if (set <= 0) return
-    if (el.scrollLeft >= set * 2) el.scrollLeft -= set
-    else if (el.scrollLeft < set) el.scrollLeft += set
-  }
-
   // Boshlang'ich joylashuv — o'rta nusxa
   useEffect(() => {
     const el = ref.current
     if (!el) return
-    const id = requestAnimationFrame(() => { el.scrollLeft = el.scrollWidth / 3 })
+    const id = requestAnimationFrame(() => {
+      posRef.current = el.scrollWidth / 3
+      el.scrollLeft = posRef.current
+    })
     return () => cancelAnimationFrame(id)
   }, [list.length])
 
-  // Avtomatik aylanish
+  // Avtomatik aylanish (kasrli pozitsiya — yumalash muammosi yo'q)
   useEffect(() => {
     const el = ref.current
     if (!el) return
     let raf
     let last = performance.now()
-    const speed = 32 // px / sekund (sekin)
+    const speed = 40 // px / sekund
     const tick = (now) => {
       const dt = now - last
       last = now
-      if (!paused.current && !drag.current.active) {
-        el.scrollLeft += (speed * dt) / 1000
-        wrap(el)
+      const set = el.scrollWidth / 3
+      if (paused.current || drag.current.active) {
+        posRef.current = el.scrollLeft   // foydalanuvchi surdi — sinxron
+      } else if (set > 0) {
+        posRef.current += (speed * dt) / 1000
+        if (posRef.current >= set * 2) posRef.current -= set
+        else if (posRef.current < set) posRef.current += set
+        el.scrollLeft = posRef.current
       }
       raf = requestAnimationFrame(tick)
     }
@@ -48,31 +49,44 @@ function SaleCarousel({ products }) {
     return () => cancelAnimationFrame(raf)
   }, [list.length])
 
-  // Sichqoncha bilan sudrash
+  const wrapScroll = (el) => {
+    const set = el.scrollWidth / 3
+    if (set <= 0) return
+    if (el.scrollLeft >= set * 2) el.scrollLeft -= set
+    else if (el.scrollLeft < set) el.scrollLeft += set
+  }
+
   const onPointerDown = (e) => {
-    if (e.pointerType !== 'mouse') { paused.current = true; return }
+    if (e.pointerType !== 'mouse') return   // barmoq — tabiiy scroll
     const el = ref.current
-    drag.current = { active: true, startX: e.clientX, startScroll: el.scrollLeft, moved: false }
-    el.classList.add('dragging')
-    el.setPointerCapture?.(e.pointerId)
+    drag.current = { active: true, captured: false, startX: e.clientX, startScroll: el.scrollLeft, moved: false, pointerId: e.pointerId }
   }
   const onPointerMove = (e) => {
-    if (!drag.current.active) return
+    const d = drag.current
+    if (!d.active) return
     const el = ref.current
-    const dx = e.clientX - drag.current.startX
-    if (Math.abs(dx) > 3) drag.current.moved = true
-    el.scrollLeft = drag.current.startScroll - dx
-    wrap(el)
-  }
-  const onPointerUp = (e) => {
-    if (e.pointerType !== 'mouse') { paused.current = false; return }
-    if (drag.current.active) {
-      drag.current.active = false
-      ref.current?.classList.remove('dragging')
-      ref.current?.releasePointerCapture?.(e.pointerId)
+    const dx = e.clientX - d.startX
+    // Capture FAQAT haqiqatan surilganda (oddiy bosishni buzmaslik uchun)
+    if (!d.moved && Math.abs(dx) > 4) {
+      d.moved = true
+      d.captured = true
+      el.setPointerCapture?.(d.pointerId)
+      el.classList.add('dragging')
+    }
+    if (d.moved) {
+      el.scrollLeft = d.startScroll - dx
+      wrapScroll(el)
     }
   }
-  // Sudragandan keyin tasodifan mahsulot ochilmasligi uchun
+  const endDrag = () => {
+    const d = drag.current
+    if (!d.active) return
+    if (d.captured) ref.current?.releasePointerCapture?.(d.pointerId)
+    ref.current?.classList.remove('dragging')
+    d.active = false
+    d.captured = false
+  }
+  // Sudragandan keyin tasodifan ochilmasligi uchun
   const onClickCapture = (e) => {
     if (drag.current.moved) {
       e.preventDefault()
@@ -87,19 +101,12 @@ function SaleCarousel({ products }) {
     <div
       className="sale-scroller"
       ref={ref}
-      onMouseEnter={() => { paused.current = true }}
-      onMouseLeave={() => {
-        paused.current = false
-        if (drag.current.active) {
-          drag.current.active = false
-          ref.current?.classList.remove('dragging')
-        }
-      }}
       onTouchStart={() => { paused.current = true }}
       onTouchEnd={() => { paused.current = false }}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
+      onPointerUp={endDrag}
+      onPointerCancel={endDrag}
       onClickCapture={onClickCapture}
     >
       <div className="sale-row">
