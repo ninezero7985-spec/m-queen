@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
+import SaleCarousel from '../components/SaleCarousel'
 import Icon from '../components/Icon'
 import '../styles/Home.css'
 
@@ -29,10 +30,6 @@ function Home() {
     }
     fetchData()
   }, [])
-
-  const baseSale = saleProducts.length
-    ? Array.from({ length: Math.max(6, saleProducts.length) }, (_, i) => saleProducts[i % saleProducts.length])
-    : []
 
   return (
     <div className="home">
@@ -97,18 +94,7 @@ function Home() {
             </h2>
             <Link to="/shop" className="see-all-link">Hammasini ko'rish →</Link>
           </div>
-          <div className="sale-carousel">
-            <div
-              className="sale-track"
-              style={{ animationDuration: `${baseSale.length * 7}s` }}
-            >
-              {[...baseSale, ...baseSale].map((product, i) => (
-                <div className="sale-slide" key={i}>
-                  <ProductCard product={product} />
-                </div>
-              ))}
-            </div>
-          </div>
+          <SaleCarousel products={saleProducts} />
         </section>
       )}
 

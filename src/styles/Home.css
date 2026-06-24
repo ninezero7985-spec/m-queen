@@ -340,3 +340,18 @@
 @media (max-width: 600px) {
   .sale-slide { width: 200px; margin-right: 12px; }
 }
+
+/* Chegirmalar — sichqoncha bilan sudraladigan karusel */
+.sale-scroller {
+  overflow-x: auto;
+  overflow-y: hidden;
+  cursor: grab;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  touch-action: pan-x;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+}
+.sale-scroller::-webkit-scrollbar { display: none; }
+.sale-scroller.dragging { cursor: grabbing; }
+.sale-row { display: flex; width: max-content; }
